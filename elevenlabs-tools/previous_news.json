@@ -3,7 +3,7 @@
     "name": "previous_news",
     "description": "Moves to the previous news article on the screen and returns its headline and summary.",
     "disable_interruptions": false,
-    "force_pre_tool_speech": "auto",
+    "force_pre_tool_speech": "force",
     "assignments": [],
     "tool_call_sound": null,
     "tool_call_sound_behavior": "auto",
