@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import styles from './MainScreen.module.css';
+import SettingsModal from './SettingsModal';
 
 type AppState = 'playing' | 'paused' | 'listening' | 'answering';
 
@@ -30,6 +31,7 @@ const newsList = [
 export default function MainScreen() {
   const [appState, setAppState] = useState<AppState>('playing');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const currentNews = newsList[currentIndex];
 
@@ -52,7 +54,7 @@ export default function MainScreen() {
           <span className={styles.dot}></span>
           San Francisco
         </div>
-        <button className={styles.iconBtn}>
+        <button className={styles.iconBtn} onClick={() => setIsSettingsOpen(true)}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
              <path d="M19.4 15A1.65 1.65 0 0 0 21 13.35V10.65A1.65 1.65 0 0 0 19.4 9H18.6A3.4 3.4 0 0 1 15 5.4V4.6A1.65 1.65 0 0 0 13.35 3H10.65A1.65 1.65 0 0 0 9 4.6V5.4A3.4 3.4 0 0 1 5.4 9H4.6A1.65 1.65 0 0 0 3 10.65V13.35A1.65 1.65 0 0 0 4.6 15H5.4A3.4 3.4 0 0 1 9 18.6V19.4A1.65 1.65 0 0 0 10.65 21H13.35A1.65 1.65 0 0 0 15 19.4V18.6A3.4 3.4 0 0 1 18.6 15H19.4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -147,6 +149,8 @@ export default function MainScreen() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M5 4L15 12L5 20V4ZM17 4H19V20H17V4Z"/></svg>
         </button>
       </div>
+
+      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
     </div>
   );
 }
