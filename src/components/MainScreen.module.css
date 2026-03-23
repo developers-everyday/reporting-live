@@ -161,6 +161,7 @@
   50% { opacity: 1; }
 }
 
+/* Controls bar */
 .controls {
   display: flex;
   align-items: center;
@@ -185,24 +186,79 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-.askBtn {
+/* Stop / end session button */
+.stopBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary);
-  color: white;
-  padding: 14px 24px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 16px;
-  box-shadow: 0 8px 20px rgba(255, 46, 46, 0.3);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 46, 46, 0.15);
+  border: 1px solid rgba(255, 46, 46, 0.3);
+  transition: all 0.2s ease;
+}
+.stopBtn:hover {
+  background: rgba(255, 46, 46, 0.3);
+}
+
+/* Mic toggle button */
+.micBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
 }
 
-.askBtn:active {
-  transform: scale(0.95);
+.micBtn:disabled {
+  opacity: 0.3;
 }
 
-.askPulse {
+.micBtn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.micActive {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 20px rgba(255, 46, 46, 0.4);
   animation: micPulse 2s infinite;
+}
+
+/* Start overlay */
+.startOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 11, 15, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.startBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 48px;
+  background: var(--primary);
+  color: white;
+  border-radius: 24px;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 12px 40px rgba(255, 46, 46, 0.4);
+  transition: all 0.2s ease;
+  animation: fadePulse 2s infinite;
+}
+
+.startBtn:active {
+  transform: scale(0.95);
 }

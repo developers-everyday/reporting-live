@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,12 +21,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <div className="container">
-          {children}
-        </div>
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#FF2E2E",
+          colorBackground: "#1a1a24",
+          colorText: "#FFFFFF",
+          colorTextSecondary: "#c0c0cc",
+          colorInputBackground: "#0f0f17",
+          colorInputText: "#FFFFFF",
+          colorNeutral: "#FFFFFF",
+          borderRadius: "12px",
+        },
+      }}
+    >
+      <html lang="en">
+        <body>
+          <div className="container">
+            {children}
+          </div>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

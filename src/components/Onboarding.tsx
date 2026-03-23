@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './Onboarding.module.css';
 
 const interestsList = ['Tech', 'Business', 'Sports', 'Gaming', 'Politics', 'Science'];
@@ -10,16 +13,42 @@ const languagesList = [
 ];
 const citiesList = ['New York', 'London', 'Mumbai', 'Tokyo', 'San Francisco'];
 
-export default function Onboarding({ onComplete }: { onComplete: () => void }) {
+export default function Onboarding() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [selectedLang, setSelectedLang] = useState('en');
   const [location, setLocation] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleInterest = (i: string) => {
     setSelectedInterests((prev) =>
       prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]
     );
+  };
+
+  const handleComplete = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/user/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interests: selectedInterests,
+          language: selectedLang,
+          location: location || null,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to complete onboarding');
+      }
+
+      router.push('/');
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -141,15 +170,15 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
       <div className={styles.footer}>
         <button
           className={`${styles.primaryBtn} ${
-            step === 1 && selectedInterests.length === 0 ? styles.disabledBtn : ''
+            (step === 1 && selectedInterests.length === 0) || isSubmitting ? styles.disabledBtn : ''
           }`}
           onClick={() => {
             if (step < 3) setStep((s) => s + 1);
-            else onComplete();
+            else handleComplete();
           }}
-          disabled={step === 1 && selectedInterests.length === 0}
+          disabled={(step === 1 && selectedInterests.length === 0) || isSubmitting}
         >
-          {step === 3 ? "Let's Go" : "Continue"}
+          {isSubmitting ? 'Saving...' : step === 3 ? "Let's Go" : "Continue"}
         </button>
       </div>
     </div>

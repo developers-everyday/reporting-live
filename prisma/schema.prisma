@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id // Clerk user ID
+  email       String   @unique
+  displayName String?
+  language    String   @default("en")
+  location    String?
+  isOnboarded Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  preferences      UserPreference[]
+  interestScores   InterestScore[]
+  interactions     Interaction[]
+  conversationLogs ConversationLog[]
+}
+
+model UserPreference {
+  id       String @id @default(cuid())
+  userId   String
+  category String
+  weight   Float  @default(1.0)
+  source   String @default("onboarding")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+}
+
+model InterestScore {
+  id       String   @id @default(cuid())
+  userId   String
+  topic    String
+  score    Float    @default(0.0)
+  lastSeen DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topic])
+  @@index([userId, score(sort: Desc)])
+}
+
+model NewsArticle {
+  id          String    @id @default(cuid())
+  headline    String
+  summary     String
+  fullContent String?   @db.Text
+  imageUrl    String?
+  sourceUrls  String[]
+  sourceNames String[]
+  categories  String[]
+  topics      String[]
+  region      String?
+  scrapedAt   DateTime
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  interactions Interaction[]
+
+  @@index([isActive, createdAt(sort: Desc)])
+}
+
+model Interaction {
+  id            String   @id @default(cuid())
+  userId        String
+  newsArticleId String
+  type          String
+  durationMs    Int?
+  voiceQuery    String?
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newsArticle NewsArticle @relation(fields: [newsArticleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([newsArticleId])
+}
+
+model ConversationLog {
+  id              String   @id @default(cuid())
+  userId          String
+  conversationId  String?
+  messages        Json
+  extractedTopics String[]
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model ScrapeJob {
+  id          String    @id @default(cuid())
+  category    String
+  query       String
+  status      String    @default("pending")
+  resultCount Int       @default(0)
+  error       String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, createdAt(sort: Desc)])
+}

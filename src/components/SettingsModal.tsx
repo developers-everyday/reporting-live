@@ -1,7 +1,10 @@
-import { useState } from 'react';
+"use client";
+
+import { useState, useEffect, useCallback } from 'react';
+import { useUser, SignOutButton } from '@clerk/nextjs';
 import styles from './SettingsModal.module.css';
 
-const INTERESTS = ['Tech', 'Business', 'Sports', 'Gaming', 'Politics', 'Science', 'Entertainment'];
+const INTERESTS = ['Tech', 'Business', 'Sports', 'Gaming', 'Politics', 'Science'];
 const LANGUAGES = [
   { code: 'en', name: 'English' },
   { code: 'hi', name: 'Hindi' },
@@ -10,9 +13,24 @@ const LANGUAGES = [
 ];
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {
-  const [location, setLocation] = useState('San Francisco');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Tech', 'Business']);
+  const { user } = useUser();
+  const [location, setLocation] = useState('');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [language, setLanguage] = useState('en');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/user/preferences')
+      .then((res) => res.json())
+      .then((data) => {
+        setLocation(data.location || '');
+        setSelectedInterests(data.interests || []);
+        setLanguage(data.language || 'en');
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const toggleInterest = (i: string) => {
     setSelectedInterests((prev) =>
@@ -20,10 +38,30 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     );
   };
 
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await fetch('/api/user/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interests: selectedInterests,
+          language,
+          location: location || null,
+        }),
+      });
+      onClose();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [selectedInterests, language, location, onClose]);
+
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div 
-        className={`${styles.modal} animate-slide-up`} 
+      <div
+        className={`${styles.modal} animate-slide-up`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
@@ -35,58 +73,79 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Premium Status</div>
-          <div className={styles.premiumCard}>
-             <div className={styles.premiumInfo}>
-                <h3>Live Reporting Free</h3>
-                <p>Limited queries per day</p>
-             </div>
-             <button className={styles.upgradeBtn}>Upgrade</button>
+        {isLoading ? (
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading...
           </div>
-        </div>
+        ) : (
+          <>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Account</div>
+              <div className={styles.premiumCard}>
+                <div className={styles.premiumInfo}>
+                  <h3>{user?.fullName || 'User'}</h3>
+                  <p>{user?.primaryEmailAddress?.emailAddress}</p>
+                </div>
+                <SignOutButton>
+                  <button className={styles.upgradeBtn}>Sign Out</button>
+                </SignOutButton>
+              </div>
+            </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Location Preferences</div>
-          <div className={styles.inputGroup}>
-            <input 
-              className={styles.input} 
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter city..."
-            />
-            <button className={styles.autoBtn}>Auto</button>
-          </div>
-        </div>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Location Preferences</div>
+              <div className={styles.inputGroup}>
+                <input
+                  className={styles.input}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter city..."
+                />
+                <button className={styles.autoBtn}>Auto</button>
+              </div>
+            </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>News Interests</div>
-          <div className={styles.chipGrid}>
-            {INTERESTS.map(i => (
-              <button 
-                key={i} 
-                className={`${styles.chip} ${selectedInterests.includes(i) ? styles.activeChip : ''}`}
-                onClick={() => toggleInterest(i)}
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>News Interests</div>
+              <div className={styles.chipGrid}>
+                {INTERESTS.map(i => (
+                  <button
+                    key={i}
+                    className={`${styles.chip} ${selectedInterests.includes(i) ? styles.activeChip : ''}`}
+                    onClick={() => toggleInterest(i)}
+                  >
+                    {i}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Reporting Language</div>
+              <select
+                className={styles.input}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                style={{ width: '100%', appearance: 'none' }}
               >
-                {i}
-              </button>
-            ))}
-          </div>
-        </div>
+                {LANGUAGES.map(l => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionTitle}>Reporting Language</div>
-          <select 
-            className={styles.input} 
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            style={{ width: '100%', appearance: 'none' }}
-          >
-            {LANGUAGES.map(l => (
-              <option key={l.code} value={l.code}>{l.name}</option>
-            ))}
-          </select>
-        </div>
+            <div className={styles.section}>
+              <button
+                className={styles.upgradeBtn}
+                style={{ width: '100%', padding: '12px' }}
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

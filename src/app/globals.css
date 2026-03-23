@@ -31,11 +31,63 @@ a {
   text-decoration: none;
 }
 
-button {
+button:not([class*="cl-"]) {
   font-family: inherit;
   cursor: pointer;
   border: none;
   background: none;
+}
+
+/* Ensure Clerk components have visible text */
+[data-clerk-component] *, .cl-rootBox *, .cl-card * {
+  color: inherit;
+}
+
+[data-clerk-component] h1,
+[data-clerk-component] h2,
+[data-clerk-component] h3,
+[data-clerk-component] label,
+[data-clerk-component] p,
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-formFieldLabel,
+.cl-formFieldHintText,
+.cl-footerActionText,
+.cl-dividerText {
+  color: #FFFFFF !important;
+}
+
+[data-clerk-component] .cl-formFieldHintText,
+[data-clerk-component] .cl-footerActionText {
+  color: #c0c0cc !important;
+}
+
+/* Clerk phone input & dropdowns */
+.cl-phoneInputBox,
+.cl-selectButton,
+.cl-selectOption,
+.cl-formFieldInput,
+[data-clerk-component] input,
+[data-clerk-component] select,
+[data-clerk-component] option {
+  color: #FFFFFF !important;
+  background-color: #0f0f17 !important;
+}
+
+[data-clerk-component] input::placeholder {
+  color: #666680 !important;
+}
+
+.cl-selectButton__phoneCode,
+.cl-phoneInputBox input,
+.cl-selectContent,
+.cl-selectOptionsContainer {
+  color: #FFFFFF !important;
+  background-color: #1a1a24 !important;
+}
+
+.cl-selectOption:hover {
+  background-color: #272730 !important;
 }
 
 /* Base Typo Classes */

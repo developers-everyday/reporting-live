@@ -1,0 +1,17 @@
+{
+    "type": "client",
+    "name": "get_current_news",
+    "description": "Retrieves the headline and summary of the news currently on the user's screen.",
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "auto",
+    "assignments": [],
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "expects_response": true,
+    "response_timeout_secs": 1,
+    "parameters": [],
+    "dynamic_variables": {
+        "dynamic_variable_placeholders": {}
+    }
+}
