@@ -202,25 +202,11 @@ export default function MainScreen({ userName }: { userName: string }) {
 
   return (
     <div className={`screen ${styles.container} animate-slide-up`}>
-      {/* Start Overlay — one tap to begin hands-free briefing */}
-      {!isStarted && (
-        <div className={styles.startOverlay}>
-          <button className={styles.startBtn} onClick={startBriefing}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="22"/>
-            </svg>
-            <span>Start Briefing</span>
-          </button>
-        </div>
-      )}
-
       {/* Top Bar */}
       <div className={styles.topBar}>
         <div className={styles.location}>
           <span className={styles.dot}></span>
-          {currentNews?.region || 'Global'}
+          {currentNews?.categories?.[0] || 'News'}
         </div>
         <button className={styles.iconBtn} onClick={() => setIsSettingsOpen(true)}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -289,32 +275,42 @@ export default function MainScreen({ userName }: { userName: string }) {
            <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M19 20L9 12L19 4V20ZM7 20H5V4H7V20Z"/></svg>
         </button>
 
-        {isStarted && (
-          <button className={styles.stopBtn} onClick={stopBriefing}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-          </button>
-        )}
+        {isStarted ? (
+          <>
+            <button className={styles.stopBtn} onClick={stopBriefing}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            </button>
 
-        <button
-          className={`${styles.micBtn} ${!micMuted && isStarted ? styles.micActive : ''}`}
-          onClick={() => setMicMuted(m => !m)}
-          disabled={!isStarted}
-        >
-          {micMuted ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="1" y1="1" x2="23" y2="23"/>
-              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
-              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .72-.11 1.41-.3 2.06"/>
-              <line x1="12" y1="19" x2="12" y2="22"/>
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button
+              className={`${styles.micBtn} ${!micMuted ? styles.micActive : ''}`}
+              onClick={() => setMicMuted(m => !m)}
+            >
+              {micMuted ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
+                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .72-.11 1.41-.3 2.06"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                </svg>
+              )}
+            </button>
+          </>
+        ) : (
+          <button className={styles.briefingBtn} onClick={startBriefing}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
               <line x1="12" y1="19" x2="12" y2="22"/>
             </svg>
-          )}
-        </button>
+            Briefing
+          </button>
+        )}
 
         <button className={styles.controlIcon} onClick={goNext}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M5 4L15 12L5 20V4ZM17 4H19V20H17V4Z"/></svg>
