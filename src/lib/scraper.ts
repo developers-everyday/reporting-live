@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { searchNews } from "@/lib/firecrawl";
+import { refineArticles } from "@/lib/llm";
 import { CATEGORIES, CATEGORY_QUERIES, type Category } from "@/lib/constants";
 
 interface ScrapeResult {
@@ -44,7 +45,6 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
   };
 
   // Step 1: Deactivate articles older than 48 hours
-  // Using raw SQL because Neon HTTP adapter doesn't support transactions (updateMany uses one)
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
   const deactivated: number = await prisma.$executeRaw`
     UPDATE "NewsArticle"
@@ -70,23 +70,43 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
 
     try {
       const items = await searchNews(query);
-      let categoryNewCount = 0;
 
-      for (const item of items) {
-        if (!item.url || existingUrlSet.has(item.url)) continue;
+      // Filter duplicates first
+      const newItems = items.filter(
+        (item) => item.url && !existingUrlSet.has(item.url)
+      );
+
+      if (newItems.length === 0) {
+        await prisma.scrapeJob.update({
+          where: { id: job.id },
+          data: { status: "completed", resultCount: 0, completedAt: new Date() },
+        });
+        result.completedJobs++;
+        console.log(`[Scraper] ${category}: 0 new articles (all duplicates)`);
+        continue;
+      }
+
+      // Refine via LLM (gracefully falls back to raw data if unavailable)
+      const refined = await refineArticles(newItems, category);
+
+      let categoryNewCount = 0;
+      for (let i = 0; i < newItems.length; i++) {
+        const item = newItems[i];
+        const refinedItem = refined[i];
 
         try {
           await prisma.newsArticle.create({
             data: {
-              headline: item.title,
-              summary: item.description,
+              headline: refinedItem.headline,
+              summary: refinedItem.summary,
+              fullContent: item.description, // preserve original raw description
               sourceUrls: [item.url],
               sourceNames: [extractSourceName(item.url)],
               categories: [category],
-              topics: extractTopics(item.title, category),
+              topics: extractTopics(refinedItem.headline, category),
               region: "US",
               scrapedAt: new Date(),
-              publishedAt: item.date ? new Date(item.date) : null,
+              publishedAt: null,
               expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
               isActive: true,
             },
