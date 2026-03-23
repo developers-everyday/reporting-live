@@ -240,13 +240,15 @@ export default function MainScreen({ userName }: { userName: string }) {
         {currentNews && (
           <>
             <div key={currentNews.id} className={`${styles.newsCard} animate-slide-up`}>
-              <div className={styles.newsImageContainer}>
-                <img
-                  src={currentNews.imageUrl || ''}
-                  alt={currentNews.headline}
-                  className={styles.newsImage}
-                />
-              </div>
+              {currentNews.imageUrl && (
+                <div className={styles.newsImageContainer}>
+                  <img
+                    src={currentNews.imageUrl}
+                    alt={currentNews.headline}
+                    className={styles.newsImage}
+                  />
+                </div>
+              )}
               <h2 className="headline" style={{ marginBottom: 16 }}>{currentNews.headline}</h2>
               <p className="summary">{currentNews.summary}</p>
             </div>
