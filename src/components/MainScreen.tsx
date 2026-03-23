@@ -22,6 +22,7 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [micMuted, setMicMuted] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
@@ -46,6 +47,23 @@ export default function MainScreen({ userName }: { userName: string }) {
 
   useEffect(() => {
     fetchNews();
+
+    // Auto-trigger scrape on page load (respects 30min cooldown server-side)
+    const refreshNews = async () => {
+      try {
+        setIsRefreshing(true);
+        const res = await fetch('/api/scrape/trigger', { method: 'POST' });
+        const data = await res.json();
+        if (data.success && !data.skipped && data.newArticles > 0) {
+          await fetchNews(); // Refetch feed with new articles
+        }
+      } catch (error) {
+        console.error('Background scrape failed:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+    refreshNews();
   }, [fetchNews]);
 
   const currentNews = newsList[currentIndex];
@@ -218,7 +236,7 @@ export default function MainScreen({ userName }: { userName: string }) {
 
       <div className={styles.liveIndicator}>
          <div className={styles.livePulse}></div>
-         LIVE REPORTING
+         {isRefreshing ? 'FETCHING FRESH NEWS...' : 'LIVE REPORTING'}
       </div>
 
       {/* Main Content Area */}
