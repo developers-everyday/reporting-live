@@ -27,12 +27,42 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [isDiving, setIsDiving] = useState(false);
   const [isCheckingSources, setIsCheckingSources] = useState(false);
   const [actionResult, setActionResult] = useState<string | null>(null);
+  const [customTopics, setCustomTopics] = useState<string[]>([]);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
+  const customTopicsRef = useRef(customTopics);
 
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { newsListRef.current = newsList; }, [newsList]);
+  useEffect(() => { customTopicsRef.current = customTopics; }, [customTopics]);
+
+  // Fetch user's custom topics
+  const fetchCustomTopics = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/preferences');
+      const data = await res.json();
+      if (data.customTopics) {
+        setCustomTopics(data.customTopics);
+      }
+    } catch (error) {
+      console.error('Failed to fetch custom topics:', error);
+    }
+  }, []);
+
+  // Search for custom topic articles
+  const refreshCustomTopics = useCallback(async (topics: string[]) => {
+    if (topics.length === 0) return;
+    await Promise.allSettled(
+      topics.map((topic) =>
+        fetch('/api/news/topic-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: topic }),
+        })
+      )
+    );
+  }, []);
 
   // Fetch news from API
   const fetchNews = useCallback(async () => {
@@ -50,27 +80,30 @@ export default function MainScreen({ userName }: { userName: string }) {
   }, []);
 
   useEffect(() => {
+    fetchCustomTopics();
     fetchNews();
-  }, [fetchNews]);
+  }, [fetchCustomTopics, fetchNews]);
 
   const refreshScrape = useCallback(async () => {
     if (isRefreshing) return;
     try {
       setIsRefreshing(true);
-      const res = await fetch('/api/scrape/trigger?force=true&clean=true', { method: 'POST' });
-      const data = await res.json();
+      // Scrape standard categories + custom topics in parallel
+      const [scrapeRes] = await Promise.allSettled([
+        fetch('/api/scrape/trigger?force=true&clean=true', { method: 'POST' }).then(r => r.json()),
+        refreshCustomTopics(customTopicsRef.current),
+      ]);
+      const data = scrapeRes.status === 'fulfilled' ? scrapeRes.value : null;
       console.log('[Scrape]', data);
-      if (data.success && data.newArticles > 0) {
-        setCurrentIndex(0);
-        currentIndexRef.current = 0;
-        await fetchNews();
-      }
+      setCurrentIndex(0);
+      currentIndexRef.current = 0;
+      await fetchNews();
     } catch (error) {
       console.error('Scrape failed:', error);
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, fetchNews]);
+  }, [isRefreshing, fetchNews, refreshCustomTopics]);
 
   const triggerDeepDive = useCallback(async () => {
     const news = newsListRef.current[currentIndexRef.current];
@@ -294,9 +327,10 @@ export default function MainScreen({ userName }: { userName: string }) {
   };
 
   // Refetch news when settings close (preferences may have changed)
-  const handleSettingsClose = () => {
+  const handleSettingsClose = async () => {
     setIsSettingsOpen(false);
-    fetchNews();
+    await fetchCustomTopics();
+    await fetchNews();
   };
 
   if (isLoading) {
