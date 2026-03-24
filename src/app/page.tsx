@@ -2,12 +2,13 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import MainScreen from "../components/MainScreen";
+import LandingPage from "../components/LandingPage";
 
 export default async function Home() {
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    return <LandingPage />;
   }
 
   const user = await prisma.user.findUnique({
