@@ -24,6 +24,9 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [micMuted, setMicMuted] = useState(true);
   const [isStarted, setIsStarted] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDiving, setIsDiving] = useState(false);
+  const [isCheckingSources, setIsCheckingSources] = useState(false);
+  const [actionResult, setActionResult] = useState<string | null>(null);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
@@ -69,6 +72,50 @@ export default function MainScreen({ userName }: { userName: string }) {
     }
   }, [isRefreshing, fetchNews]);
 
+  const triggerDeepDive = useCallback(async () => {
+    const news = newsListRef.current[currentIndexRef.current];
+    if (!news || isDiving) return;
+    setIsDiving(true);
+    setActionResult(null);
+    try {
+      const res = await fetch('/api/news/deep-dive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: news.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.briefing) {
+        setActionResult(data.briefing);
+      }
+    } catch {
+      setActionResult("Couldn't fetch details right now.");
+    } finally {
+      setIsDiving(false);
+    }
+  }, [isDiving]);
+
+  const triggerOtherSources = useCallback(async () => {
+    const news = newsListRef.current[currentIndexRef.current];
+    if (!news || isCheckingSources) return;
+    setIsCheckingSources(true);
+    setActionResult(null);
+    try {
+      const res = await fetch('/api/news/multi-source', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: news.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.comparison) {
+        setActionResult(data.comparison);
+      }
+    } catch {
+      setActionResult("Couldn't check other sources right now.");
+    } finally {
+      setIsCheckingSources(false);
+    }
+  }, [isCheckingSources]);
+
   const currentNews = newsList[currentIndex];
 
   // Navigation helpers (also used by manual prev/next buttons)
@@ -78,6 +125,7 @@ export default function MainScreen({ userName }: { userName: string }) {
     const next = (currentIndexRef.current + 1) % len;
     currentIndexRef.current = next;
     setCurrentIndex(next);
+    setActionResult(null);
     const article = newsListRef.current[next];
     if (article) {
       fetch('/api/interactions', {
@@ -94,6 +142,7 @@ export default function MainScreen({ userName }: { userName: string }) {
     const prev = (currentIndexRef.current - 1 + len) % len;
     currentIndexRef.current = prev;
     setCurrentIndex(prev);
+    setActionResult(null);
     const article = newsListRef.current[prev];
     if (article) {
       fetch('/api/interactions', {
@@ -175,6 +224,8 @@ export default function MainScreen({ userName }: { userName: string }) {
         console.log("[ElevenLabs] deep_dive called");
         const news = newsListRef.current[currentIndexRef.current];
         if (!news) return "No article is currently displayed.";
+        setIsDiving(true);
+        setActionResult(null);
         try {
           const res = await fetch('/api/news/deep-dive', {
             method: 'POST',
@@ -182,11 +233,14 @@ export default function MainScreen({ userName }: { userName: string }) {
             body: JSON.stringify({ articleId: news.id }),
           });
           const data = await res.json();
+          setIsDiving(false);
           if (data.success && data.briefing) {
+            setActionResult(data.briefing);
             return `Here's a deeper look at this story: ${data.briefing}`;
           }
           return data.briefing || "I wasn't able to get more details on this story right now.";
         } catch {
+          setIsDiving(false);
           return "I had trouble fetching the details. Let's move on.";
         }
       },
@@ -194,6 +248,8 @@ export default function MainScreen({ userName }: { userName: string }) {
         console.log("[ElevenLabs] other_sources called");
         const news = newsListRef.current[currentIndexRef.current];
         if (!news) return "No article is currently displayed.";
+        setIsCheckingSources(true);
+        setActionResult(null);
         try {
           const res = await fetch('/api/news/multi-source', {
             method: 'POST',
@@ -201,11 +257,14 @@ export default function MainScreen({ userName }: { userName: string }) {
             body: JSON.stringify({ articleId: news.id }),
           });
           const data = await res.json();
+          setIsCheckingSources(false);
           if (data.success && data.comparison) {
+            setActionResult(data.comparison);
             return `Here's what other sources are saying: ${data.comparison}`;
           }
           return data.comparison || "I couldn't find additional source coverage for this story right now.";
         } catch {
+          setIsCheckingSources(false);
           return "I had trouble checking other sources. Let's continue.";
         }
       }
@@ -320,6 +379,40 @@ export default function MainScreen({ userName }: { userName: string }) {
           </>
         )}
       </div>
+
+      {/* Action Buttons */}
+      {currentNews && (
+        <div className={styles.actionBar}>
+          <button
+            className={`${styles.actionBtn} ${isDiving ? styles.actionLoading : ''}`}
+            onClick={triggerDeepDive}
+            disabled={isDiving || isCheckingSources}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            {isDiving ? 'Diving...' : 'Deep Dive'}
+          </button>
+          <button
+            className={`${styles.actionBtn} ${isCheckingSources ? styles.actionLoading : ''}`}
+            onClick={triggerOtherSources}
+            disabled={isDiving || isCheckingSources}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            {isCheckingSources ? 'Checking...' : 'Other Sources'}
+          </button>
+        </div>
+      )}
+
+      {/* Action Result */}
+      {actionResult && (
+        <div className={styles.actionResult}>
+          <button className={styles.actionResultClose} onClick={() => setActionResult(null)}>✕</button>
+          <p>{actionResult}</p>
+        </div>
+      )}
 
       {/* Visualizer Area */}
       <div className={styles.visualizerArea}>
