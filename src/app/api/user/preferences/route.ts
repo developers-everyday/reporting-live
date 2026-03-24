@@ -11,6 +11,7 @@ export async function GET() {
       select: {
         language: true,
         location: true,
+        customTopics: true,
         preferences: {
           select: { category: true, weight: true, source: true },
         },
@@ -24,6 +25,7 @@ export async function GET() {
     return NextResponse.json({
       language: user.language,
       location: user.location,
+      customTopics: user.customTopics || [],
       interests: user.preferences.map((p) => p.category),
       preferences: user.preferences,
     });
@@ -36,20 +38,23 @@ export async function PUT(request: Request) {
   try {
     const userId = await getAuthUserId();
     const body = await request.json();
-    const { interests, language, location } = body as {
+    const { interests, language, location, customTopics } = body as {
       interests?: string[];
       language?: string;
       location?: string;
+      customTopics?: string[];
     };
 
     // Update profile fields if provided
-    if (language !== undefined || location !== undefined) {
+    const profileUpdate: Record<string, unknown> = {};
+    if (language !== undefined) profileUpdate.language = language;
+    if (location !== undefined) profileUpdate.location = location;
+    if (customTopics !== undefined) profileUpdate.customTopics = customTopics;
+
+    if (Object.keys(profileUpdate).length > 0) {
       await prisma.user.update({
         where: { id: userId },
-        data: {
-          ...(language !== undefined && { language }),
-          ...(location !== undefined && { location }),
-        },
+        data: profileUpdate,
       });
     }
 
@@ -78,6 +83,7 @@ export async function PUT(request: Request) {
       select: {
         language: true,
         location: true,
+        customTopics: true,
         preferences: {
           select: { category: true, weight: true, source: true },
         },
@@ -87,6 +93,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       language: updated?.language,
       location: updated?.location,
+      customTopics: updated?.customTopics || [],
       interests: updated?.preferences.map((p) => p.category),
       preferences: updated?.preferences,
     });

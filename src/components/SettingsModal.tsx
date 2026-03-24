@@ -17,7 +17,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [location, setLocation] = useState('');
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [language, setLanguage] = useState('en');
-  const [isLoading, setIsLoading] = useState(true);
+  const [customTopics, setCustomTopics] = useState<string[]>([]);
+  const [topicInput, setTopicInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -27,15 +28,28 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         setLocation(data.location || '');
         setSelectedInterests(data.interests || []);
         setLanguage(data.language || 'en');
+        setCustomTopics(data.customTopics || []);
       })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+      .catch(console.error);
   }, []);
 
   const toggleInterest = (i: string) => {
     setSelectedInterests((prev) =>
       prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]
     );
+  };
+
+  const addTopic = () => {
+    const topic = topicInput.trim();
+    if (!topic) return;
+    if (customTopics.some((t) => t.toLowerCase() === topic.toLowerCase())) return;
+    if (customTopics.length >= 10) return;
+    setCustomTopics((prev) => [...prev, topic]);
+    setTopicInput('');
+  };
+
+  const removeTopic = (topic: string) => {
+    setCustomTopics((prev) => prev.filter((t) => t !== topic));
   };
 
   const handleSave = useCallback(async () => {
@@ -48,15 +62,26 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
           interests: selectedInterests,
           language,
           location: location || null,
+          customTopics,
         }),
       });
+
+      // Trigger topic search for each custom topic so articles are ready
+      for (const topic of customTopics) {
+        fetch('/api/news/topic-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: topic }),
+        }).catch(console.error);
+      }
+
       onClose();
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [selectedInterests, language, location, onClose]);
+  }, [selectedInterests, language, location, customTopics, onClose]);
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -73,79 +98,103 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {isLoading ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Loading...
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Account</div>
+          <div className={styles.premiumCard}>
+            <div className={styles.premiumInfo}>
+              <h3>{user?.fullName || 'User'}</h3>
+              <p>{user?.primaryEmailAddress?.emailAddress}</p>
+            </div>
+            <SignOutButton>
+              <button className={styles.upgradeBtn}>Sign Out</button>
+            </SignOutButton>
           </div>
-        ) : (
-          <>
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>Account</div>
-              <div className={styles.premiumCard}>
-                <div className={styles.premiumInfo}>
-                  <h3>{user?.fullName || 'User'}</h3>
-                  <p>{user?.primaryEmailAddress?.emailAddress}</p>
-                </div>
-                <SignOutButton>
-                  <button className={styles.upgradeBtn}>Sign Out</button>
-                </SignOutButton>
-              </div>
-            </div>
+        </div>
 
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>Location Preferences</div>
-              <div className={styles.inputGroup}>
-                <input
-                  className={styles.input}
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter city..."
-                />
-                <button className={styles.autoBtn}>Auto</button>
-              </div>
-            </div>
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Location Preferences</div>
+          <div className={styles.inputGroup}>
+            <input
+              className={styles.input}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter city..."
+            />
+            <button className={styles.autoBtn}>Auto</button>
+          </div>
+        </div>
 
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>News Interests</div>
-              <div className={styles.chipGrid}>
-                {INTERESTS.map(i => (
-                  <button
-                    key={i}
-                    className={`${styles.chip} ${selectedInterests.includes(i) ? styles.activeChip : ''}`}
-                    onClick={() => toggleInterest(i)}
-                  >
-                    {i}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>Reporting Language</div>
-              <select
-                className={styles.input}
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                style={{ width: '100%', appearance: 'none' }}
-              >
-                {LANGUAGES.map(l => (
-                  <option key={l.code} value={l.code}>{l.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className={styles.section}>
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>News Interests</div>
+          <div className={styles.chipGrid}>
+            {INTERESTS.map(i => (
               <button
-                className={styles.upgradeBtn}
-                style={{ width: '100%', padding: '12px' }}
-                onClick={handleSave}
-                disabled={isSaving}
+                key={i}
+                className={`${styles.chip} ${selectedInterests.includes(i) ? styles.activeChip : ''}`}
+                onClick={() => toggleInterest(i)}
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {i}
               </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Custom Topics</div>
+          <p className={styles.sectionHint}>Add topics for personalized news</p>
+          <div className={styles.inputGroup}>
+            <input
+              className={styles.input}
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addTopic(); }}
+              placeholder="e.g. AI, Formula 1, Climate..."
+              maxLength={50}
+            />
+            <button
+              className={styles.autoBtn}
+              onClick={addTopic}
+              disabled={!topicInput.trim() || customTopics.length >= 10}
+            >
+              Add
+            </button>
+          </div>
+          {customTopics.length > 0 && (
+            <div className={styles.topicChips}>
+              {customTopics.map((topic) => (
+                <span key={topic} className={styles.topicChip}>
+                  {topic}
+                  <button className={styles.topicRemove} onClick={() => removeTopic(topic)}>✕</button>
+                </span>
+              ))}
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Reporting Language</div>
+          <select
+            className={styles.input}
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            style={{ width: '100%', appearance: 'none' }}
+          >
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.section}>
+          <button
+            className={styles.upgradeBtn}
+            style={{ width: '100%', padding: '12px' }}
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
       </div>
     </div>
   );
