@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="docs/screenshot-landing.png" alt="ReportingLive Landing Page" width="300" />
+  <img src="docs/Home_Page.PNG" alt="ReportingLive Home Page" width="250" />
+  <img src="docs/Login_Page.PNG" alt="ReportingLive Login" width="250" />
+  <img src="docs/News_Briefing.PNG" alt="ReportingLive News Briefing" width="250" />
 </p>
 
 <h1 align="center">ReportingLive</h1>
@@ -18,11 +20,6 @@
 
 <p align="center">
   A hands-free, voice-first news experience. Get briefed by an AI anchor that reads, explains, and digs deeper into stories — all powered by real-time web scraping.
-</p>
-
-<p align="center">
-  <!-- Replace with actual GIF -->
-  <img src="docs/demo.gif" alt="ReportingLive Demo" width="300" />
 </p>
 
 <p align="center">
