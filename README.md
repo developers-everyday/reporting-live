@@ -197,7 +197,6 @@ src/
 - **Interaction-based learning** — personalize feed based on what users listen to and ask about
 
 ### Phase 3 — Future Vision
-- Licensed news API integrations (replacing scraping where possible)
 - Global language expansion
 - News agency partnerships
 - Mobile app (React Native)
