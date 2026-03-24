@@ -47,24 +47,26 @@ export default function MainScreen({ userName }: { userName: string }) {
 
   useEffect(() => {
     fetchNews();
-
-    // Auto-trigger scrape on page load (respects 30min cooldown server-side)
-    const refreshNews = async () => {
-      try {
-        setIsRefreshing(true);
-        const res = await fetch('/api/scrape/trigger', { method: 'POST' });
-        const data = await res.json();
-        if (data.success && !data.skipped && data.newArticles > 0) {
-          await fetchNews(); // Refetch feed with new articles
-        }
-      } catch (error) {
-        console.error('Background scrape failed:', error);
-      } finally {
-        setIsRefreshing(false);
-      }
-    };
-    refreshNews();
   }, [fetchNews]);
+
+  const refreshScrape = useCallback(async () => {
+    if (isRefreshing) return;
+    try {
+      setIsRefreshing(true);
+      const res = await fetch('/api/scrape/trigger?force=true&clean=true', { method: 'POST' });
+      const data = await res.json();
+      console.log('[Scrape]', data);
+      if (data.success && data.newArticles > 0) {
+        setCurrentIndex(0);
+        currentIndexRef.current = 0;
+        await fetchNews();
+      }
+    } catch (error) {
+      console.error('Scrape failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, fetchNews]);
 
   const currentNews = newsList[currentIndex];
 
@@ -226,12 +228,19 @@ export default function MainScreen({ userName }: { userName: string }) {
           <span className={styles.dot}></span>
           {currentNews?.categories?.[0] || 'News'}
         </div>
-        <button className={styles.iconBtn} onClick={() => setIsSettingsOpen(true)}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-             <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-             <path d="M19.4 15A1.65 1.65 0 0 0 21 13.35V10.65A1.65 1.65 0 0 0 19.4 9H18.6A3.4 3.4 0 0 1 15 5.4V4.6A1.65 1.65 0 0 0 13.35 3H10.65A1.65 1.65 0 0 0 9 4.6V5.4A3.4 3.4 0 0 1 5.4 9H4.6A1.65 1.65 0 0 0 3 10.65V13.35A1.65 1.65 0 0 0 4.6 15H5.4A3.4 3.4 0 0 1 9 18.6V19.4A1.65 1.65 0 0 0 10.65 21H13.35A1.65 1.65 0 0 0 15 19.4V18.6A3.4 3.4 0 0 1 18.6 15H19.4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className={`${styles.iconBtn} ${isRefreshing ? styles.spinning : ''}`} onClick={refreshScrape} disabled={isRefreshing}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            </svg>
+          </button>
+          <button className={styles.iconBtn} onClick={() => setIsSettingsOpen(true)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+               <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+               <path d="M19.4 15A1.65 1.65 0 0 0 21 13.35V10.65A1.65 1.65 0 0 0 19.4 9H18.6A3.4 3.4 0 0 1 15 5.4V4.6A1.65 1.65 0 0 0 13.35 3H10.65A1.65 1.65 0 0 0 9 4.6V5.4A3.4 3.4 0 0 1 5.4 9H4.6A1.65 1.65 0 0 0 3 10.65V13.35A1.65 1.65 0 0 0 4.6 15H5.4A3.4 3.4 0 0 1 9 18.6V19.4A1.65 1.65 0 0 0 10.65 21H13.35A1.65 1.65 0 0 0 15 19.4V18.6A3.4 3.4 0 0 1 18.6 15H19.4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className={styles.liveIndicator}>
@@ -250,22 +259,23 @@ export default function MainScreen({ userName }: { userName: string }) {
                     src={currentNews.imageUrl}
                     alt={currentNews.headline}
                     className={styles.newsImage}
+                    onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
                   />
                 </div>
               )}
-              <h2 className="headline" style={{ marginBottom: 16 }}>{currentNews.headline}</h2>
-              <p className="summary">{currentNews.summary}</p>
-            </div>
+              <h2 className={styles.newsHeadline}>{currentNews.headline}</h2>
+              <p className={styles.newsSummary}>{currentNews.summary}</p>
 
-            {/* Verified Sources */}
-            <div className={styles.sourcesWrapper}>
-              <div className={styles.sourcesTitle}>VERIFIED SOURCES</div>
-              <div className={styles.sourcesList}>
-                {currentNews.sourceNames.map((src) => (
-                  <div key={src} className={styles.sourceChip}>
-                    <span className={styles.checkIcon}>✓</span> {src}
-                  </div>
-                ))}
+              {/* Verified Sources */}
+              <div className={styles.sourcesWrapper}>
+                <div className={styles.sourcesTitle}>VERIFIED SOURCES</div>
+                <div className={styles.sourcesList}>
+                  {currentNews.sourceNames.map((src) => (
+                    <div key={src} className={styles.sourceChip}>
+                      <span className={styles.checkIcon}>✓</span> {src}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </>

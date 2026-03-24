@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { searchNews } from "@/lib/firecrawl";
 import { refineArticles } from "@/lib/llm";
+import { generateNewsImages } from "@/lib/image-gen";
 import { CATEGORIES, CATEGORY_QUERIES, type Category } from "@/lib/constants";
 
 interface ScrapeResult {
@@ -89,6 +90,9 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
       // Refine via LLM (gracefully falls back to raw data if unavailable)
       const refined = await refineArticles(newItems, category);
 
+      // Generate image URLs for all articles in this category
+      const images = generateNewsImages(refined, category);
+
       let categoryNewCount = 0;
       for (let i = 0; i < newItems.length; i++) {
         const item = newItems[i];
@@ -99,6 +103,7 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
             data: {
               headline: refinedItem.headline,
               summary: refinedItem.summary,
+              imageUrl: images[i] || null,
               fullContent: item.description, // preserve original raw description
               sourceUrls: [item.url],
               sourceNames: [extractSourceName(item.url)],

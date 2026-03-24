@@ -2,22 +2,24 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .location {
   display: flex;
   align-items: center;
   background: var(--card-bg);
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-main);
 }
@@ -34,8 +36,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--card-bg);
   transition: all 0.2s;
@@ -44,11 +46,12 @@
 .liveIndicator {
   display: flex;
   align-items: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--primary);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .livePulse {
@@ -64,25 +67,31 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .newsCard {
   background: var(--card-bg);
-  padding: 24px;
-  border-radius: 24px;
-  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 20px;
+  margin-bottom: 12px;
   border: 1px solid var(--border-color);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .newsImageContainer {
   width: 100%;
-  height: 160px;
-  border-radius: 16px;
+  height: 140px;
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .newsImage {
@@ -91,22 +100,42 @@
   object-fit: cover;
 }
 
+.newsHeadline {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.newsSummary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  flex-shrink: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
 .sourcesWrapper {
-  margin-bottom: auto;
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .sourcesTitle {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 1px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .sourcesList {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sourceChip {
@@ -114,35 +143,36 @@
   align-items: center;
   background: rgba(46, 204, 113, 0.1);
   color: var(--verified);
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 12px;
   font-weight: 600;
   border: 1px solid rgba(46, 204, 113, 0.2);
 }
 
 .checkIcon {
-  margin-right: 6px;
+  margin-right: 5px;
   font-weight: bold;
 }
 
 .visualizerArea {
-  height: 80px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .voiceWave {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 60px;
+  gap: 5px;
+  height: 40px;
 }
 
 .voiceWave .bar {
-  width: 8px;
+  width: 6px;
   height: 100%;
   background: linear-gradient(to top, var(--primary), #FF7B7B);
   border-radius: 10px;
@@ -151,7 +181,7 @@
 
 .listeningText, .pausedText {
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   animation: fadePulse 1.5s infinite;
 }
@@ -167,17 +197,18 @@
   align-items: center;
   justify-content: space-between;
   background: var(--card-bg);
-  padding: 16px 24px;
-  border-radius: 30px;
+  padding: 12px 20px;
+  border-radius: 28px;
   border: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .controlIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: transparent;
   transition: all 0.2s;
@@ -191,8 +222,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: rgba(255, 46, 46, 0.15);
   border: 1px solid rgba(255, 46, 46, 0.3);
@@ -207,8 +238,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -238,10 +269,10 @@
   gap: 8px;
   background: var(--primary);
   color: white;
-  padding: 12px 24px;
+  padding: 10px 22px;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   box-shadow: 0 6px 20px rgba(255, 46, 46, 0.3);
   transition: all 0.2s ease;
 }
@@ -250,6 +281,11 @@
   transform: scale(0.95);
 }
 
-.startBtn:active {
-  transform: scale(0.95);
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

@@ -66,7 +66,7 @@ ${JSON.stringify(
 )}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
     const completion = await azureClient.chat.completions.create(
