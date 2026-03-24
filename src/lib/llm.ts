@@ -114,3 +114,108 @@ ${JSON.stringify(
     clearTimeout(timeout);
   }
 }
+
+// --- Deep Dive: full article → detailed spoken briefing ---
+
+const DEEP_DIVE_PROMPT = `You are a professional news analyst creating an in-depth briefing for a voice-based news app.
+Create a detailed 30-60 second spoken briefing (about 100-150 words) from the full article content.
+Be informative, engaging, and natural-sounding.
+Do NOT use headers, bullet points, or formatting — this will be read aloud.
+Do NOT fabricate facts. Only use information present in the article.
+Start directly with the content, no preamble like "Here's a deeper look".`;
+
+export async function generateDeepDive(
+  headline: string,
+  summary: string,
+  fullMarkdown: string
+): Promise<string> {
+  const azureClient = getClient();
+  if (!azureClient) {
+    // Fallback: clean first 500 chars of markdown
+    return fullMarkdown.replace(/[#*\[\]()>|_~`]/g, "").slice(0, 500).trim();
+  }
+
+  const truncated = fullMarkdown.slice(0, 8000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const completion = await azureClient.chat.completions.create(
+      {
+        model: process.env.AZURE_OPENAI_DEPLOYMENT!,
+        messages: [
+          { role: "system", content: DEEP_DIVE_PROMPT },
+          { role: "user", content: `Headline: ${headline}\nCurrent summary: ${summary}\n\nFull article:\n${truncated}` },
+        ],
+        max_completion_tokens: 500,
+      },
+      { signal: controller.signal }
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      console.warn("[LLM] Empty deep dive response");
+      return fullMarkdown.replace(/[#*\[\]()>|_~`]/g, "").slice(0, 500).trim();
+    }
+
+    console.log(`[LLM] Deep dive generated (${content.length} chars)`);
+    return content;
+  } catch (error) {
+    console.error("[LLM] Deep dive error:", error);
+    return fullMarkdown.replace(/[#*\[\]()>|_~`]/g, "").slice(0, 500).trim();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// --- Multi-Source Comparison ---
+
+const MULTI_SOURCE_PROMPT = `You are a professional news analyst comparing how different sources cover the same story.
+Create a concise multi-perspective summary (about 100-150 words) suitable for reading aloud.
+Mention each source by name and highlight what each emphasizes differently.
+Be objective and balanced. Do NOT use headers, bullet points, or formatting.
+Start directly with the comparison, no preamble.`;
+
+export async function generateMultiSourceComparison(
+  headline: string,
+  sources: Array<{ sourceName: string; markdown: string }>
+): Promise<string> {
+  const azureClient = getClient();
+  if (!azureClient) {
+    return "Multiple sources covered this story but I couldn't generate a comparison right now.";
+  }
+
+  const sourceSummaries = sources
+    .map((s) => `Source: ${s.sourceName}\n${s.markdown.slice(0, 4000)}`)
+    .join("\n\n---\n\n");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const completion = await azureClient.chat.completions.create(
+      {
+        model: process.env.AZURE_OPENAI_DEPLOYMENT!,
+        messages: [
+          { role: "system", content: MULTI_SOURCE_PROMPT },
+          { role: "user", content: `Story headline: ${headline}\n\n${sourceSummaries}` },
+        ],
+        max_completion_tokens: 500,
+      },
+      { signal: controller.signal }
+    );
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      return "Multiple sources covered this story but I couldn't generate a comparison right now.";
+    }
+
+    console.log(`[LLM] Multi-source comparison generated (${content.length} chars)`);
+    return content;
+  } catch (error) {
+    console.error("[LLM] Multi-source error:", error);
+    return "Multiple sources covered this story but I couldn't generate a comparison right now.";
+  } finally {
+    clearTimeout(timeout);
+  }
+}

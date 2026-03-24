@@ -51,8 +51,9 @@ model NewsArticle {
   id          String    @id @default(cuid())
   headline    String
   summary     String
-  fullContent String?   @db.Text
-  imageUrl    String?
+  fullContent      String?   @db.Text
+  deepDiveSummary  String?   @db.Text
+  imageUrl         String?
   sourceUrls  String[]
   sourceNames String[]
   categories  String[]

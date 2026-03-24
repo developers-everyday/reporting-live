@@ -1,0 +1,17 @@
+{
+    "type": "client",
+    "name": "deep_dive",
+    "description": "Gets an in-depth briefing on the current news article by scraping the full source article. Use when the user says 'tell me more', 'go deeper', 'more details', or asks for the full story.",
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "force",
+    "assignments": [],
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "expects_response": true,
+    "response_timeout_secs": 30,
+    "parameters": [],
+    "dynamic_variables": {
+        "dynamic_variable_placeholders": {}
+    }
+}

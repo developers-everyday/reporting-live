@@ -10,6 +10,7 @@ interface NewsArticle {
   headline: string;
   summary: string;
   imageUrl: string | null;
+  sourceUrls: string[];
   sourceNames: string[];
   categories: string[];
   region: string | null;
@@ -169,6 +170,44 @@ export default function MainScreen({ userName }: { userName: string }) {
           return `Moved to previous article. Headline: ${article.headline}. Summary: ${article.summary}`;
         }
         return "Moved to the previous news article.";
+      },
+      deep_dive: async () => {
+        console.log("[ElevenLabs] deep_dive called");
+        const news = newsListRef.current[currentIndexRef.current];
+        if (!news) return "No article is currently displayed.";
+        try {
+          const res = await fetch('/api/news/deep-dive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ articleId: news.id }),
+          });
+          const data = await res.json();
+          if (data.success && data.briefing) {
+            return `Here's a deeper look at this story: ${data.briefing}`;
+          }
+          return data.briefing || "I wasn't able to get more details on this story right now.";
+        } catch {
+          return "I had trouble fetching the details. Let's move on.";
+        }
+      },
+      other_sources: async () => {
+        console.log("[ElevenLabs] other_sources called");
+        const news = newsListRef.current[currentIndexRef.current];
+        if (!news) return "No article is currently displayed.";
+        try {
+          const res = await fetch('/api/news/multi-source', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ articleId: news.id }),
+          });
+          const data = await res.json();
+          if (data.success && data.comparison) {
+            return `Here's what other sources are saying: ${data.comparison}`;
+          }
+          return data.comparison || "I couldn't find additional source coverage for this story right now.";
+        } catch {
+          return "I had trouble checking other sources. Let's continue.";
+        }
       }
     }
   });

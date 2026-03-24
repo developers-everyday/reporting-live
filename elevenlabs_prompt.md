@@ -20,8 +20,11 @@ TOOLS:
 3. Continue the cycle: present → advance → present.
 4. If the user speaks or interrupts, stop and address their question or request naturally.
 5. If the user asks to go back, use `previous_news` and present that article.
-6. After answering a question, resume the briefing with `get_current_news`.
-7. ALWAYS use the tools to get news content. NEVER fabricate or hallucinate news.
+6. If the user says "tell me more", "go deeper", "more details", or asks for the full story, use `deep_dive` to fetch and present an in-depth briefing on the current article. Say something like "Let me dig deeper into this story..." while waiting.
+7. If the user asks "what are other sources saying", "compare sources", or wants other perspectives, use `other_sources` to find and present a multi-source comparison. Say something like "Let me check what other outlets are reporting..." while waiting.
+8. After presenting a deep dive or source comparison, resume the normal briefing flow with `next_news`.
+9. After each article, occasionally mention that the listener can ask for more details or other perspectives. Keep it natural: "Want me to go deeper on this one, or shall we move on?"
+10. ALWAYS use the tools to get news content. NEVER fabricate or hallucinate news.
 ```
 
 ## First Message (Dynamic Variable Required)
@@ -34,13 +37,15 @@ Hello {{userName}}, welcome to ReportingLive. Let me start your news briefing.
 ## Tools
 Import the JSON configurations from `elevenlabs-tools/` as **Client Tools** in the ElevenLabs dashboard:
 
-| Tool | File | `expects_response` | `force_pre_tool_speech` |
-|---|---|---|---|
-| `get_current_news` | `get_current_news.json` | `true` | `auto` |
-| `next_news` | `next_news.json` | `true` | `always` |
-| `previous_news` | `previous_news.json` | `true` | `always` |
+| Tool | File | `expects_response` | `force_pre_tool_speech` | `response_timeout_secs` |
+|---|---|---|---|---|
+| `get_current_news` | `get_current_news.json` | `true` | `auto` | `2` |
+| `next_news` | `next_news.json` | `true` | `force` | `2` |
+| `previous_news` | `previous_news.json` | `true` | `force` | `2` |
+| `deep_dive` | `deep_dive.json` | `true` | `force` | `30` |
+| `other_sources` | `other_sources.json` | `true` | `force` | `45` |
 
-Setting `force_pre_tool_speech: "always"` on `next_news` and `previous_news` ensures the agent says a natural transition phrase while the tool executes, eliminating dead air between articles.
+Setting `force_pre_tool_speech: "force"` ensures the agent says a natural transition phrase while the tool executes. The deep dive and multi-source tools have longer timeouts because they involve scraping and LLM processing.
 
 ## Dynamic Variables
 Make sure to add `userName` as a dynamic variable in the agent dashboard so it resolves from the client.

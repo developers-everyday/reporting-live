@@ -91,7 +91,7 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
       const refined = await refineArticles(newItems, category);
 
       // Generate image URLs for all articles in this category
-      const images = generateNewsImages(refined, category);
+      const images = generateNewsImages(refined);
 
       let categoryNewCount = 0;
       for (let i = 0; i < newItems.length; i++) {

@@ -22,6 +22,7 @@ export async function GET(request: Request) {
           headline: true,
           summary: true,
           imageUrl: true,
+          sourceUrls: true,
           sourceNames: true,
           categories: true,
           region: true,

@@ -1,0 +1,17 @@
+{
+    "type": "client",
+    "name": "other_sources",
+    "description": "Finds and compares how other news sources are covering the current story. Use when the user asks 'what are other sources saying', 'compare sources', 'other perspectives', or 'is anyone reporting this differently'.",
+    "disable_interruptions": false,
+    "force_pre_tool_speech": "force",
+    "assignments": [],
+    "tool_call_sound": null,
+    "tool_call_sound_behavior": "auto",
+    "execution_mode": "immediate",
+    "expects_response": true,
+    "response_timeout_secs": 45,
+    "parameters": [],
+    "dynamic_variables": {
+        "dynamic_variable_placeholders": {}
+    }
+}
