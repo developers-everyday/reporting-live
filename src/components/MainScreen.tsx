@@ -27,6 +27,9 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [isDiving, setIsDiving] = useState(false);
   const [isCheckingSources, setIsCheckingSources] = useState(false);
   const [actionResult, setActionResult] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
@@ -71,6 +74,40 @@ export default function MainScreen({ userName }: { userName: string }) {
       setIsRefreshing(false);
     }
   }, [isRefreshing, fetchNews]);
+
+  const searchTopic = useCallback(async (query: string) => {
+    if (!query.trim() || isSearching) return;
+    setIsSearching(true);
+    setActionResult(null);
+    try {
+      const res = await fetch('/api/news/topic-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      const data = await res.json();
+      if (data.success && data.articles?.length > 0) {
+        setNewsList(data.articles);
+        newsListRef.current = data.articles;
+        setCurrentIndex(0);
+        currentIndexRef.current = 0;
+        setActiveFilter(query.trim());
+      } else {
+        setActionResult('No articles found for "' + query.trim() + '"');
+      }
+    } catch {
+      setActionResult("Search failed. Try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  }, [isSearching]);
+
+  const clearFilter = useCallback(() => {
+    setActiveFilter(null);
+    setSearchQuery('');
+    setActionResult(null);
+    fetchNews();
+  }, [fetchNews]);
 
   const triggerDeepDive = useCallback(async () => {
     const news = newsListRef.current[currentIndexRef.current];
@@ -343,7 +380,34 @@ export default function MainScreen({ userName }: { userName: string }) {
 
       <div className={styles.liveIndicator}>
          <div className={styles.livePulse}></div>
-         {isRefreshing ? 'FETCHING FRESH NEWS...' : 'LIVE REPORTING'}
+         {isRefreshing ? 'FETCHING FRESH NEWS...' : isSearching ? 'SEARCHING...' : activeFilter ? `TOPIC: ${activeFilter.toUpperCase()}` : 'LIVE REPORTING'}
+      </div>
+
+      {/* Search Bar */}
+      <div className={styles.searchBar}>
+        <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input
+          className={styles.searchInput}
+          type="text"
+          placeholder="Search any topic..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') searchTopic(searchQuery); }}
+          disabled={isSearching}
+        />
+        {activeFilter ? (
+          <button className={styles.searchClear} onClick={clearFilter}>✕</button>
+        ) : (
+          <button
+            className={styles.searchBtn}
+            onClick={() => searchTopic(searchQuery)}
+            disabled={isSearching || !searchQuery.trim()}
+          >
+            {isSearching ? '...' : 'Go'}
+          </button>
+        )}
       </div>
 
       {/* Main Content Area */}
