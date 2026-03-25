@@ -8,12 +8,15 @@ interface RawArticle {
 interface RefinedArticle {
   headline: string;
   summary: string;
+  imageTag: string;
 }
 
-function passthrough(articles: RawArticle[]): RefinedArticle[] {
+function passthrough(articles: RawArticle[], category?: string): RefinedArticle[] {
+  const tag = category?.toLowerCase() || "default";
   return articles.map((a) => ({
     headline: a.title,
     summary: a.description,
+    imageTag: tag,
   }));
 }
 
@@ -34,12 +37,15 @@ function getClient(): AzureOpenAI | null {
   return client;
 }
 
+const IMAGE_TAG_LIST = "war, politics, sports, cricket, football, finance, tech, science, health, gaming, climate, world, entertainment, business";
+
 const SYSTEM_PROMPT = `You are a professional news editor for a voice-based news briefing app.
 Your job is to rewrite raw scraped news into polished, broadcast-ready content.
 
 RULES:
 - Headline: Clean, engaging, 5-15 words. Remove source names, pipes (|), dashes followed by outlet names, "..." truncations. Make it informative and complete.
 - Summary: 2-3 sentences. Informative, engaging, and natural-sounding when read aloud by a voice agent. Avoid jargon. Do not start with "In a" or similar cliches. Vary sentence openings across articles.
+- imageTag: Pick ONE word from this list that best matches the article's visual theme: ${IMAGE_TAG_LIST}. Choose the most specific match (e.g. "cricket" over "sports" for cricket news).
 - Do NOT fabricate facts. Only use information present in the original title and description.
 - Do NOT add opinions or editorial commentary.
 - Return valid JSON and nothing else.`;
@@ -53,10 +59,10 @@ export async function refineArticles(
   const azureClient = getClient();
   if (!azureClient) {
     console.warn("[LLM] Azure OpenAI not configured, using passthrough");
-    return passthrough(articles);
+    return passthrough(articles, category);
   }
 
-  const userPrompt = `Rewrite these ${category} news articles. Return a JSON object with an "articles" array containing exactly ${articles.length} objects, each with "headline" and "summary" fields, in the same order as the input.
+  const userPrompt = `Rewrite these ${category} news articles. Return a JSON object with an "articles" array containing exactly ${articles.length} objects, each with "headline", "summary", and "imageTag" fields, in the same order as the input.
 
 Input articles:
 ${JSON.stringify(
@@ -85,19 +91,19 @@ ${JSON.stringify(
     const content = completion.choices[0]?.message?.content;
     if (!content) {
       console.warn(`[LLM] Empty response for ${category}, using passthrough`);
-      return passthrough(articles);
+      return passthrough(articles, category);
     }
 
     const parsed = JSON.parse(content) as { articles: RefinedArticle[] };
     if (!Array.isArray(parsed.articles) || parsed.articles.length !== articles.length) {
       console.warn(`[LLM] Response length mismatch for ${category}, using passthrough`);
-      return passthrough(articles);
+      return passthrough(articles, category);
     }
 
     for (const item of parsed.articles) {
       if (typeof item.headline !== "string" || typeof item.summary !== "string") {
         console.warn(`[LLM] Invalid item in ${category} response, using passthrough`);
-        return passthrough(articles);
+        return passthrough(articles, category);
       }
     }
 
@@ -109,7 +115,7 @@ ${JSON.stringify(
     } else {
       console.error(`[LLM] Error for ${category}:`, error);
     }
-    return passthrough(articles);
+    return passthrough(articles, category);
   } finally {
     clearTimeout(timeout);
   }

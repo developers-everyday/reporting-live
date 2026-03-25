@@ -1,21 +1,34 @@
-// Uses Lorem Picsum for free, reliable news card images.
-// Seed is derived from headline so each article gets a consistent image.
+// Curated category images served from public/news-images/.
+// The LLM tags each article with an imageTag during refinement.
+// Falls back to default image if tag is unknown.
 
-export function generateNewsImageUrl(headline: string): string {
-  const seed = hashString(headline);
-  return `https://picsum.photos/seed/${seed}/800/450`;
-}
+const IMAGE_TAGS = new Set([
+  "war",
+  "politics",
+  "sports",
+  "cricket",
+  "football",
+  "finance",
+  "tech",
+  "science",
+  "health",
+  "gaming",
+  "climate",
+  "world",
+  "entertainment",
+  "business",
+]);
 
-function hashString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+export function getNewsImageUrl(imageTag?: string): string {
+  const tag = imageTag?.toLowerCase();
+  if (tag && IMAGE_TAGS.has(tag)) {
+    return `/news-images/${tag}.jpg`;
   }
-  return Math.abs(hash).toString(36);
+  return `/news-images/default.jpg`;
 }
 
 export function generateNewsImages(
-  articles: { headline: string }[],
+  articles: { headline: string; imageTag?: string }[],
 ): (string | null)[] {
-  return articles.map((a) => generateNewsImageUrl(a.headline));
+  return articles.map((a) => getNewsImageUrl(a.imageTag));
 }
