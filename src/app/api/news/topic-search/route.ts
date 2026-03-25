@@ -73,7 +73,7 @@ export async function POST(request: Request) {
           headline: true,
           summary: true,
           imageUrl: true,
-          fallbackImageUrl: true,
+
           sourceUrls: true,
           sourceNames: true,
           categories: true,
@@ -97,8 +97,7 @@ export async function POST(request: Request) {
           data: {
             headline: refinedItem.headline,
             summary: refinedItem.summary,
-            imageUrl: images[i].imageUrl,
-            fallbackImageUrl: images[i].fallbackImageUrl,
+            imageUrl: images[i],
             fullContent: item.description,
             sourceUrls: [item.url],
             sourceNames: [extractSourceName(item.url)],
@@ -115,7 +114,7 @@ export async function POST(request: Request) {
             headline: true,
             summary: true,
             imageUrl: true,
-            fallbackImageUrl: true,
+  
             sourceUrls: true,
             sourceNames: true,
             categories: true,

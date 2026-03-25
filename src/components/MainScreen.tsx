@@ -10,11 +10,17 @@ interface NewsArticle {
   headline: string;
   summary: string;
   imageUrl: string | null;
-  fallbackImageUrl: string | null;
   sourceUrls: string[];
   sourceNames: string[];
   categories: string[];
   region: string | null;
+}
+
+const VALID_IMAGE_TAGS = new Set(["war","politics","sports","cricket","football","finance","tech","science","health","gaming","climate","world","entertainment","business"]);
+
+function getCategoryFallbackImage(categories: string[]): string {
+  const tag = (categories[0] || "").toLowerCase();
+  return VALID_IMAGE_TAGS.has(tag) ? `/news-images/${tag}.jpg` : `/news-images/default.jpg`;
 }
 
 export default function MainScreen({ userName }: { userName: string }) {
@@ -394,8 +400,9 @@ export default function MainScreen({ userName }: { userName: string }) {
                     className={styles.newsImage}
                     onError={(e) => {
                       const img = e.target as HTMLImageElement;
-                      if (currentNews.fallbackImageUrl && img.src !== currentNews.fallbackImageUrl) {
-                        img.src = currentNews.fallbackImageUrl;
+                      const fallback = getCategoryFallbackImage(currentNews.categories);
+                      if (!img.src.endsWith(fallback)) {
+                        img.src = fallback;
                       } else {
                         img.parentElement!.style.display = 'none';
                       }

@@ -22,7 +22,6 @@ export async function GET(request: Request) {
           headline: true,
           summary: true,
           imageUrl: true,
-          fallbackImageUrl: true,
           sourceUrls: true,
           sourceNames: true,
           categories: true,

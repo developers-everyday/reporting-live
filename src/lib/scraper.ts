@@ -103,8 +103,7 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
             data: {
               headline: refinedItem.headline,
               summary: refinedItem.summary,
-              imageUrl: images[i].imageUrl,
-              fallbackImageUrl: images[i].fallbackImageUrl,
+              imageUrl: images[i],
               fullContent: item.description, // preserve original raw description
               sourceUrls: [item.url],
               sourceNames: [extractSourceName(item.url)],
