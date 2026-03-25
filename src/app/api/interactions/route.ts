@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUserId } from "@/lib/auth";
+import { currentUser } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
   try {
@@ -17,6 +18,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Ensure user exists in DB (may not if onboarding was skipped/failed)
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!existingUser) {
+      const clerkUser = await currentUser();
+      await prisma.user.create({
+        data: {
+          id: userId,
+          email: clerkUser?.emailAddresses[0]?.emailAddress || "",
+          displayName: clerkUser?.firstName
+            ? `${clerkUser.firstName}${clerkUser.lastName ? " " + clerkUser.lastName : ""}`
+            : undefined,
+        },
+      });
+    }
+
     const interaction = await prisma.interaction.create({
       data: {
         userId,
@@ -28,7 +44,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ interaction }, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error("[Interactions] Error:", error);
     return NextResponse.json({ error: "Failed to record interaction" }, { status: 500 });
   }
 }

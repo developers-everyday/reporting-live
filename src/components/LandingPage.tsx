@@ -1,5 +1,6 @@
 "use client";
 
+import { Waitlist } from "@clerk/nextjs";
 import styles from "./LandingPage.module.css";
 
 export default function LandingPage() {
@@ -56,11 +57,21 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* CTA */}
+      {/* Waitlist */}
       <div className={styles.ctaSection}>
-        <a href="/sign-in" className={styles.ctaButton}>
-          Get Early Access
-        </a>
+        <Waitlist
+          appearance={{
+            elements: {
+              rootBox: { width: "100%", maxWidth: "360px" },
+              card: {
+                background: "var(--card-bg)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "16px",
+                boxShadow: "none",
+              },
+            },
+          }}
+        />
         <p className={styles.ctaNote}>Free during beta. No credit card needed.</p>
       </div>
 
