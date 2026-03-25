@@ -2,6 +2,7 @@ export interface FirecrawlNewsItem {
   title: string;
   description: string;
   url: string;
+  imageUrl?: string;
 }
 
 // Raw response item may have various field names
@@ -162,9 +163,10 @@ export async function searchNews(
       ? json.data
       : json.data.news ?? [];
 
-    // Log first item to debug field names
+    // Log first item to debug field names and image availability
     if (rawItems.length > 0) {
       console.log(`[Firecrawl] "${query}" sample keys:`, Object.keys(rawItems[0]));
+      console.log(`[Firecrawl] "${query}" sample item:`, JSON.stringify(rawItems[0], null, 2));
     }
 
     // Normalize and filter results
@@ -181,7 +183,8 @@ export async function searchNews(
       // Skip if description is empty or same as title
       if (!description || description === title) continue;
 
-      items.push({ title, description, url });
+      const imageUrl = (raw.imageUrl || "").trim() || undefined;
+      items.push({ title, description, url, imageUrl });
     }
 
     console.log(`[Firecrawl] "${query}" returned ${rawItems.length} raw, ${items.length} after filtering`);

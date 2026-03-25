@@ -55,6 +55,7 @@ model NewsArticle {
   fullContent      String?   @db.Text
   deepDiveSummary  String?   @db.Text
   imageUrl         String?
+  fallbackImageUrl String?
   sourceUrls  String[]
   sourceNames String[]
   categories  String[]

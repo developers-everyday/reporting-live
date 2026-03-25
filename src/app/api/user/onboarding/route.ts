@@ -18,25 +18,51 @@ export async function POST(request: Request) {
     };
 
     // Upsert user with onboarding data
-    const user = await prisma.user.upsert({
-      where: { id: userId },
-      create: {
-        id: userId,
-        email: clerkUser?.emailAddresses[0]?.emailAddress || "",
-        displayName:
-          clerkUser?.firstName
-            ? `${clerkUser.firstName}${clerkUser.lastName ? " " + clerkUser.lastName : ""}`
-            : undefined,
-        language: language || "en",
-        location: location || null,
-        isOnboarded: true,
-      },
-      update: {
-        language: language || "en",
-        location: location || null,
-        isOnboarded: true,
-      },
-    });
+    // Handle case where email already exists under a different Clerk user ID
+    // (e.g. user deleted account and re-signed up)
+    const email = clerkUser?.emailAddresses[0]?.emailAddress || "";
+    const displayName = clerkUser?.firstName
+      ? `${clerkUser.firstName}${clerkUser.lastName ? " " + clerkUser.lastName : ""}`
+      : undefined;
+
+    let user;
+    try {
+      user = await prisma.user.upsert({
+        where: { id: userId },
+        create: {
+          id: userId,
+          email,
+          displayName,
+          language: language || "en",
+          location: location || null,
+          isOnboarded: true,
+        },
+        update: {
+          language: language || "en",
+          location: location || null,
+          isOnboarded: true,
+        },
+      });
+    } catch (e: unknown) {
+      // Duplicate email — update the existing row to use the new Clerk user ID
+      const code = typeof e === "object" && e !== null && "code" in e
+        ? (e as { code: string }).code
+        : "";
+      if (code === "P2002" || code === "23505") {
+        user = await prisma.user.update({
+          where: { email },
+          data: {
+            id: userId,
+            displayName,
+            language: language || "en",
+            location: location || null,
+            isOnboarded: true,
+          },
+        });
+      } else {
+        throw e;
+      }
+    }
 
     // Upsert preferences for each selected interest
     for (const category of interests) {

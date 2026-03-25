@@ -73,6 +73,7 @@ export async function POST(request: Request) {
           headline: true,
           summary: true,
           imageUrl: true,
+          fallbackImageUrl: true,
           sourceUrls: true,
           sourceNames: true,
           categories: true,
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
 
     // Refine via LLM
     const refined = await refineArticles(newItems, query);
-    const images = generateNewsImages(refined);
+    const images = generateNewsImages(refined, query);
 
     // Save to DB
     const savedArticles = [];
@@ -96,7 +97,8 @@ export async function POST(request: Request) {
           data: {
             headline: refinedItem.headline,
             summary: refinedItem.summary,
-            imageUrl: images[i] || null,
+            imageUrl: images[i].imageUrl,
+            fallbackImageUrl: images[i].fallbackImageUrl,
             fullContent: item.description,
             sourceUrls: [item.url],
             sourceNames: [extractSourceName(item.url)],
@@ -113,6 +115,7 @@ export async function POST(request: Request) {
             headline: true,
             summary: true,
             imageUrl: true,
+            fallbackImageUrl: true,
             sourceUrls: true,
             sourceNames: true,
             categories: true,

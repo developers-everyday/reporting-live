@@ -90,8 +90,8 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
       // Refine via LLM (gracefully falls back to raw data if unavailable)
       const refined = await refineArticles(newItems, category);
 
-      // Generate image URLs for all articles in this category
-      const images = generateNewsImages(refined);
+      // Generate Pollinations image URLs with category fallbacks
+      const images = generateNewsImages(refined, category);
 
       let categoryNewCount = 0;
       for (let i = 0; i < newItems.length; i++) {
@@ -103,7 +103,8 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
             data: {
               headline: refinedItem.headline,
               summary: refinedItem.summary,
-              imageUrl: images[i] || null,
+              imageUrl: images[i].imageUrl,
+              fallbackImageUrl: images[i].fallbackImageUrl,
               fullContent: item.description, // preserve original raw description
               sourceUrls: [item.url],
               sourceNames: [extractSourceName(item.url)],

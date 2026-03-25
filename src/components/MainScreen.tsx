@@ -10,6 +10,7 @@ interface NewsArticle {
   headline: string;
   summary: string;
   imageUrl: string | null;
+  fallbackImageUrl: string | null;
   sourceUrls: string[];
   sourceNames: string[];
   categories: string[];
@@ -391,7 +392,14 @@ export default function MainScreen({ userName }: { userName: string }) {
                     src={currentNews.imageUrl}
                     alt={currentNews.headline}
                     className={styles.newsImage}
-                    onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (currentNews.fallbackImageUrl && img.src !== currentNews.fallbackImageUrl) {
+                        img.src = currentNews.fallbackImageUrl;
+                      } else {
+                        img.parentElement!.style.display = 'none';
+                      }
+                    }}
                   />
                 </div>
               )}
