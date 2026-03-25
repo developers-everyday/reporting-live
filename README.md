@@ -194,10 +194,12 @@ src/
 - **Interaction-based learning** — personalize feed based on what users listen to and ask about
 
 ### Phase 3 — Future Vision
-- Global language expansion
-- News agency partnerships
-- Mobile app (React Native)
-- Real-time breaking news alerts via voice
+- **Voice cloning** — choose from globally recognized anchor-inspired voices or clone your own for a personalized briefing experience
+- **Live AI anchor avatar** — a visual AI news presenter that narrates stories on-screen, bringing the broadcast feel to life
+- **Real-time breaking news alerts** — push notifications with voice briefings for major stories
+- **Global language expansion** — full multilingual support with region-specific anchors
+- **News agency partnerships** — licensed content from trusted outlets
+- **Mobile app** — native iOS/Android experience (React Native)
 
 ## Like This Project?
 
