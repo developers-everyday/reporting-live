@@ -41,7 +41,18 @@ export async function POST(request: Request) {
       }
     }
 
-    const result = await runScrapePipeline();
+    // Accept optional categories filter from POST body
+    let categories: string[] | undefined;
+    try {
+      const body = await request.json();
+      if (Array.isArray(body?.categories) && body.categories.length > 0) {
+        categories = body.categories;
+      }
+    } catch {
+      // No body or invalid JSON — scrape all categories
+    }
+
+    const result = await runScrapePipeline(categories);
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error("Manual scrape trigger failed:", error);

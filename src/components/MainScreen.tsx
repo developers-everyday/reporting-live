@@ -35,14 +35,17 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [isCheckingSources, setIsCheckingSources] = useState(false);
   const [actionResult, setActionResult] = useState<string | null>(null);
   const [customTopics, setCustomTopics] = useState<string[]>([]);
+  const [userInterests, setUserInterests] = useState<string[]>([]);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
   const customTopicsRef = useRef(customTopics);
+  const userInterestsRef = useRef(userInterests);
 
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { newsListRef.current = newsList; }, [newsList]);
   useEffect(() => { customTopicsRef.current = customTopics; }, [customTopics]);
+  useEffect(() => { userInterestsRef.current = userInterests; }, [userInterests]);
 
   // Fetch user's custom topics
   const fetchCustomTopics = useCallback(async () => {
@@ -51,6 +54,9 @@ export default function MainScreen({ userName }: { userName: string }) {
       const data = await res.json();
       if (data.customTopics) {
         setCustomTopics(data.customTopics);
+      }
+      if (data.interests) {
+        setUserInterests(data.interests);
       }
     } catch (error) {
       console.error('Failed to fetch custom topics:', error);
@@ -95,13 +101,16 @@ export default function MainScreen({ userName }: { userName: string }) {
     if (isRefreshing) return;
     try {
       setIsRefreshing(true);
-      // Scrape standard categories + custom topics in parallel
-      const [scrapeRes] = await Promise.allSettled([
-        fetch('/api/scrape/trigger?force=true&clean=true', { method: 'POST' }).then(r => r.json()),
-        refreshCustomTopics(customTopicsRef.current),
-      ]);
-      const data = scrapeRes.status === 'fulfilled' ? scrapeRes.value : null;
-      console.log('[Scrape]', data);
+      // Step 1: Scrape user's selected standard categories
+      const interests = userInterestsRef.current;
+      const scrapeRes = await fetch('/api/scrape/trigger?force=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(interests.length > 0 ? { categories: interests } : {}),
+      }).then(r => r.json()).catch(() => null);
+      console.log('[Scrape]', scrapeRes);
+      // Step 2: Then fetch custom topic articles (after scrape, to avoid race conditions)
+      await refreshCustomTopics(customTopicsRef.current);
       setCurrentIndex(0);
       currentIndexRef.current = 0;
       await fetchNews();
@@ -312,18 +321,44 @@ export default function MainScreen({ userName }: { userName: string }) {
   });
 
   const startBriefing = async () => {
+    console.log("[Briefing] Button clicked, conversation status:", conversation.status);
     try {
+      console.log("[Briefing] Requesting mic access...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("[Briefing] Mic access granted");
+
+      // Check for custom anchor voice from Anchor Studio
+      let customVoiceId: string | undefined;
+      try {
+        const savedAnchor = localStorage.getItem("reportinglive_custom_anchor");
+        if (savedAnchor) {
+          const parsed = JSON.parse(savedAnchor);
+          customVoiceId = parsed.voiceId;
+          console.log("[Briefing] Custom anchor voice found:", customVoiceId);
+        } else {
+          console.log("[Briefing] No custom anchor, using default voice");
+        }
+      } catch {
+        console.warn("[Briefing] Failed to parse saved anchor, using default");
+      }
+
       // @ts-ignore
       await conversation.startSession({
         agentId: process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || '',
         dynamicVariables: {
           userName,
-        }
+        },
+        ...(customVoiceId ? {
+          overrides: {
+            tts: { voiceId: customVoiceId },
+          },
+        } : {}),
       });
+      console.log("[Briefing] Session started successfully");
       setIsStarted(true);
     } catch (e) {
-      console.error("Failed to start briefing:", e);
+      console.error("[Briefing] Failed:", e);
+      alert("Failed to start briefing: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -340,21 +375,18 @@ export default function MainScreen({ userName }: { userName: string }) {
     await fetchNews();
   };
 
+  // Auto-trigger scrape when feed is empty (e.g., first load or after DB was cleaned)
+  useEffect(() => {
+    if (!isLoading && newsList.length === 0 && !isRefreshing) {
+      refreshScrape();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
   if (isLoading) {
     return (
       <div className={`screen ${styles.container}`} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <div style={{ color: 'var(--text-muted)' }}>Loading news...</div>
-      </div>
-    );
-  }
-
-  if (newsList.length === 0) {
-    return (
-      <div className={`screen ${styles.container}`} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ color: 'var(--text-muted)', textAlign: 'center' }}>
-          <p>No news articles yet.</p>
-          <p style={{ fontSize: '14px', marginTop: '8px' }}>Check back soon!</p>
-        </div>
       </div>
     );
   }
@@ -368,6 +400,11 @@ export default function MainScreen({ userName }: { userName: string }) {
           {currentNews?.categories?.[0] || 'News'}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button className={styles.iconBtn} onClick={() => window.location.href = '/anchor-studio'} title="Anchor Studio">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          </button>
           <button className={`${styles.iconBtn} ${isRefreshing ? styles.spinning : ''}`} onClick={refreshScrape} disabled={isRefreshing}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
@@ -389,13 +426,20 @@ export default function MainScreen({ userName }: { userName: string }) {
 
       {/* Main Content Area */}
       <div className={styles.mainContent}>
-        {currentNews && (
+        {newsList.length === 0 ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, color: 'var(--text-muted)', textAlign: 'center' }}>
+            <div>
+              <p>{isRefreshing ? 'Fetching your news...' : 'No news articles yet.'}</p>
+              {!isRefreshing && <p style={{ fontSize: '14px', marginTop: '8px' }}>Hit refresh or update your topics in Settings.</p>}
+            </div>
+          </div>
+        ) : currentNews && (
           <>
             <div key={currentNews.id} className={`${styles.newsCard} animate-slide-up`}>
               {currentNews.imageUrl && (
                 <div className={styles.newsImageContainer}>
                   <img
-                    src={currentNews.imageUrl}
+                    src={currentNews.imageUrl.replace("http://localhost:8787", "")}
                     alt={currentNews.headline}
                     className={styles.newsImage}
                     onError={(e) => {
@@ -429,6 +473,7 @@ export default function MainScreen({ userName }: { userName: string }) {
         )}
       </div>
 
+
       {/* Action Buttons */}
       {currentNews && (
         <div className={styles.actionBar}>
@@ -451,6 +496,20 @@ export default function MainScreen({ userName }: { userName: string }) {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
             {isCheckingSources ? 'Checking...' : 'Other Sources'}
+          </button>
+          <button
+            className={styles.actionBtn}
+            onClick={() => {
+              if (currentNews) {
+                window.location.href = `/immersive?articleId=${currentNews.id}`;
+              }
+            }}
+            disabled={!currentNews}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+            </svg>
+            Soundscape
           </button>
         </div>
       )}

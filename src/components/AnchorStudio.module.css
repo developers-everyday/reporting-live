@@ -1,0 +1,317 @@
+.container {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card-bg);
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Step indicator */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transition: all 0.3s;
+}
+
+.stepActive {
+  width: 24px;
+  border-radius: 4px;
+  background: var(--primary);
+}
+
+.stepDone {
+  background: var(--verified);
+}
+
+.errorText {
+  font-size: 13px;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 46, 46, 0.1);
+  border-radius: 8px;
+}
+
+/* Step content */
+.stepContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.stepSubtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* Chip grid */
+.chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  border-color: var(--text-muted);
+}
+
+.chipSelected {
+  background: rgba(255, 46, 46, 0.15);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Text input */
+.textInput {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+  font-family: inherit;
+}
+
+.textInput:focus {
+  border-color: var(--primary);
+}
+
+.textArea {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.textArea:focus {
+  border-color: var(--primary);
+}
+
+/* Buttons */
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primaryBtn:not(:disabled):hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(255, 46, 46, 0.3);
+}
+
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.secondaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+
+/* Preview cards */
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.previewCard {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.previewSelected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.previewLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.previewDuration {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.previewActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.previewPlayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  transition: all 0.2s;
+}
+
+.previewPlayBtn:hover {
+  transform: scale(1.05);
+}
+
+.selectBtn {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.selectBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.selectBtnActive {
+  background: rgba(255, 46, 46, 0.15);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

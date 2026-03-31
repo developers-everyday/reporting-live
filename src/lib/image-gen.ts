@@ -1,7 +1,6 @@
-// Primary: Pollinations AI generates unique images per article headline.
+// Primary: Cloudflare Workers AI (FLUX model) generates unique images per article headline.
+// Proxied through Next.js API route for same-origin loading.
 // Fallback: curated category images from public/news-images/ (derived on frontend).
-
-const POLLINATIONS_BASE = "https://gen.pollinations.ai/image";
 
 // Stable seed from headline so the same article always gets the same image
 function hashCode(str: string): number {
@@ -12,15 +11,18 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
-function generatePollinationsUrl(headline: string, category: string): string {
+function generateImageUrl(headline: string, category: string): string {
   const prompt = `News editorial photo: ${headline}. Category: ${category}. Photojournalistic, high quality, no text or watermarks.`;
-  const encoded = encodeURIComponent(prompt);
-  return `${POLLINATIONS_BASE}/${encoded}?width=1792&height=1024&model=flux&nologo=true&seed=${hashCode(headline)}`;
+  const params = new URLSearchParams({
+    prompt,
+    seed: String(hashCode(headline)),
+  });
+  return `/api/image?${params}`;
 }
 
 export function generateNewsImages(
   articles: { headline: string }[],
   category: string,
 ): string[] {
-  return articles.map((a) => generatePollinationsUrl(a.headline, category));
+  return articles.map((a) => generateImageUrl(a.headline, category));
 }

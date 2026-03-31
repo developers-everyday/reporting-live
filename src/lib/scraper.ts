@@ -36,9 +36,13 @@ function extractTopics(headline: string, category: string): string[] {
   return Array.from(topics).slice(0, 5);
 }
 
-export async function runScrapePipeline(): Promise<ScrapeResult> {
+export async function runScrapePipeline(filterCategories?: string[]): Promise<ScrapeResult> {
+  const categoriesToScrape = filterCategories
+    ? CATEGORIES.filter((c) => filterCategories.includes(c))
+    : [...CATEGORIES];
+
   const result: ScrapeResult = {
-    totalJobs: CATEGORIES.length,
+    totalJobs: categoriesToScrape.length,
     completedJobs: 0,
     failedJobs: 0,
     newArticles: 0,
@@ -62,7 +66,7 @@ export async function runScrapePipeline(): Promise<ScrapeResult> {
   const existingUrlSet = new Set(existingArticles.flatMap((a) => a.sourceUrls));
 
   // Step 3: Scrape each category sequentially
-  for (const category of CATEGORIES) {
+  for (const category of categoriesToScrape) {
     const query = CATEGORY_QUERIES[category as Category];
 
     const job = await prisma.scrapeJob.create({

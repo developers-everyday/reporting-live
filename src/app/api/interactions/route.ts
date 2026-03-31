@@ -33,6 +33,15 @@ export async function POST(request: Request) {
       });
     }
 
+    // Verify article still exists (may have been deleted by clean refresh)
+    const article = await prisma.newsArticle.findUnique({
+      where: { id: newsArticleId },
+      select: { id: true },
+    });
+    if (!article) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
     const interaction = await prisma.interaction.create({
       data: {
         userId,
