@@ -175,6 +175,28 @@
   color: var(--primary);
 }
 
+.anchorStudioBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(255, 46, 46, 0.1) 0%, rgba(255, 46, 46, 0.05) 100%);
+  border: 1px solid rgba(255, 46, 46, 0.3);
+  color: var(--text-main);
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.anchorStudioBtn:hover {
+  background: linear-gradient(135deg, rgba(255, 46, 46, 0.2) 0%, rgba(255, 46, 46, 0.1) 100%);
+  border-color: rgba(255, 46, 46, 0.5);
+}
+
 .upgradeBtn {
   background: var(--primary);
   color: white;

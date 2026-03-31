@@ -301,6 +301,134 @@
   border-color: var(--primary);
 }
 
+/* Current Anchor Card */
+.currentAnchorCard {
+  background: linear-gradient(135deg, rgba(255, 46, 46, 0.12) 0%, rgba(255, 46, 46, 0.04) 100%);
+  border: 1px solid rgba(255, 46, 46, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.currentAnchorLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.currentAnchorName {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.defaultBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 6px 14px;
+  transition: all 0.2s;
+}
+
+.defaultBtn:hover {
+  color: var(--text-main);
+  border-color: var(--text-muted);
+}
+
+/* Anchor List */
+.anchorList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.anchorItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.2s;
+}
+
+.anchorItemActive {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.anchorItemInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.anchorItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.activeBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: rgba(255, 46, 46, 0.15);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.anchorItemActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switchBtn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(255, 46, 46, 0.1);
+  border: 1px solid rgba(255, 46, 46, 0.25);
+  border-radius: 16px;
+  padding: 6px 14px;
+  transition: all 0.2s;
+}
+
+.switchBtn:hover {
+  background: rgba(255, 46, 46, 0.2);
+  border-color: var(--primary);
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+  color: var(--primary);
+  background: rgba(255, 46, 46, 0.1);
+  border-color: rgba(255, 46, 46, 0.25);
+}
+
 /* Spinner */
 .spinner {
   display: inline-block;

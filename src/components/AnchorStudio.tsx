@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useAgent } from "agents/react";
 import { useRouter } from "next/navigation";
 import styles from "./AnchorStudio.module.css";
@@ -48,8 +48,54 @@ const VOICE_CHARACTERISTICS = [
 const VOICE_GENDERS = ["Male", "Female", "Androgynous"] as const;
 type VoiceGender = (typeof VOICE_GENDERS)[number];
 
+interface SavedAnchor {
+  voiceId: string;
+  voiceName: string;
+}
+
+const STORAGE_KEY_ACTIVE = "reportinglive_custom_anchor";
+const STORAGE_KEY_ALL = "reportinglive_all_anchors";
+
+function loadActiveAnchor(): SavedAnchor | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ACTIVE);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function loadAllAnchors(): SavedAnchor[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ALL);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveAllAnchors(anchors: SavedAnchor[]) {
+  localStorage.setItem(STORAGE_KEY_ALL, JSON.stringify(anchors));
+}
+
 export default function AnchorStudio() {
   const router = useRouter();
+
+  // Saved anchors state
+  const [activeAnchor, setActiveAnchor] = useState<SavedAnchor | null>(null);
+  const [savedAnchors, setSavedAnchors] = useState<SavedAnchor[]>([]);
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Load saved anchors on mount — migrate legacy active anchor into the list
+  useEffect(() => {
+    const active = loadActiveAnchor();
+    let all = loadAllAnchors();
+    // Migrate: if there's an active anchor that isn't in the saved list, add it
+    if (active && !all.some((a) => a.voiceId === active.voiceId)) {
+      all = [...all, active];
+      saveAllAnchors(all);
+    }
+    setActiveAnchor(active);
+    setSavedAnchors(all);
+    // If no anchors exist, show wizard directly
+    if (all.length === 0) setShowWizard(true);
+  }, []);
 
   // Wizard state
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -80,6 +126,39 @@ export default function AnchorStudio() {
   // Audio playback
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const switchAnchor = (anchor: SavedAnchor) => {
+    localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(anchor));
+    setActiveAnchor(anchor);
+  };
+
+  const useDefaultVoice = () => {
+    localStorage.removeItem(STORAGE_KEY_ACTIVE);
+    setActiveAnchor(null);
+  };
+
+  const deleteAnchor = (voiceId: string) => {
+    const updated = savedAnchors.filter((a) => a.voiceId !== voiceId);
+    setSavedAnchors(updated);
+    saveAllAnchors(updated);
+    if (activeAnchor?.voiceId === voiceId) {
+      useDefaultVoice();
+    }
+  };
+
+  const startNewAnchor = () => {
+    setShowWizard(true);
+    setStep(1);
+    setSelectedTraits([]);
+    setSelectedCharacteristics([]);
+    setAnchorName("");
+    setVoiceGender("Male");
+    setPreviews([]);
+    setVoiceDescription("");
+    setSelectedPreviewId(null);
+    setCreatedVoice(null);
+    setError(null);
+  };
 
   // Connect to AnchorAgent
   const agent = useAgent<AnchorState>({
@@ -181,19 +260,23 @@ export default function AnchorStudio() {
   // Save and finish
   const handleDone = () => {
     if (createdVoice) {
-      localStorage.setItem(
-        "reportinglive_custom_anchor",
-        JSON.stringify(createdVoice)
-      );
+      // Save as active anchor
+      localStorage.setItem(STORAGE_KEY_ACTIVE, JSON.stringify(createdVoice));
+      setActiveAnchor(createdVoice);
+      // Add to saved anchors list (avoid duplicates)
+      const updated = savedAnchors.filter((a) => a.voiceId !== createdVoice.voiceId);
+      updated.push(createdVoice);
+      setSavedAnchors(updated);
+      saveAllAnchors(updated);
     }
-    router.push("/");
+    setShowWizard(false);
   };
 
   return (
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={() => router.push("/")}>
+        <button className={styles.backBtn} onClick={() => showWizard && savedAnchors.length > 0 ? setShowWizard(false) : router.push("/")}>
           <svg
             width="20"
             height="20"
@@ -212,6 +295,70 @@ export default function AnchorStudio() {
         <div style={{ width: 36 }} />
       </div>
 
+      {/* Anchor Management View */}
+      {!showWizard && (
+        <div className={styles.stepContent}>
+          {/* Current Active Anchor */}
+          <div className={styles.currentAnchorCard}>
+            <div className={styles.currentAnchorLabel}>Current Anchor</div>
+            <div className={styles.currentAnchorName}>
+              {activeAnchor ? activeAnchor.voiceName : "Default Voice"}
+            </div>
+            {activeAnchor && (
+              <button className={styles.defaultBtn} onClick={useDefaultVoice}>
+                Switch to Default
+              </button>
+            )}
+          </div>
+
+          {/* Saved Anchors */}
+          {savedAnchors.length > 0 && (
+            <div className={styles.section}>
+              <label className={styles.sectionLabel}>Your Anchors</label>
+              <div className={styles.anchorList}>
+                {savedAnchors.map((anchor) => (
+                  <div
+                    key={anchor.voiceId}
+                    className={`${styles.anchorItem} ${activeAnchor?.voiceId === anchor.voiceId ? styles.anchorItemActive : ""}`}
+                  >
+                    <div className={styles.anchorItemInfo}>
+                      <span className={styles.anchorItemName}>{anchor.voiceName}</span>
+                      {activeAnchor?.voiceId === anchor.voiceId && (
+                        <span className={styles.activeBadge}>Active</span>
+                      )}
+                    </div>
+                    <div className={styles.anchorItemActions}>
+                      {activeAnchor?.voiceId !== anchor.voiceId && (
+                        <button
+                          className={styles.switchBtn}
+                          onClick={() => switchAnchor(anchor)}
+                        >
+                          Use
+                        </button>
+                      )}
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => deleteAnchor(anchor.voiceId)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button className={styles.primaryBtn} onClick={startNewAnchor}>
+            + Create New Anchor
+          </button>
+        </div>
+      )}
+
+      {/* Wizard View */}
+      {showWizard && <>
       {/* Step Indicator */}
       <div className={styles.steps}>
         {[1, 2, 3].map((s) => (
@@ -417,10 +564,11 @@ export default function AnchorStudio() {
           </div>
 
           <button className={styles.primaryBtn} onClick={handleDone}>
-            Save & Return to News
+            Save Anchor
           </button>
         </div>
       )}
+      </>}
     </div>
   );
 }

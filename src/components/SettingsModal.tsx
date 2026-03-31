@@ -112,6 +112,23 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className={styles.section}>
+          <div className={styles.sectionTitle}>Anchor Studio</div>
+          <p className={styles.sectionHint}>Clone your voice and become an AI news anchor</p>
+          <button
+            className={styles.anchorStudioBtn}
+            onClick={() => { window.location.href = '/anchor-studio'; }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 18.5A2.5 2.5 0 0 1 7.5 20c-.3 0-.5-.2-.5-.5v-1a7 7 0 0 1 10 0v1c0 .3-.2.5-.5.5A2.5 2.5 0 0 1 12 18.5Z"/>
+              <circle cx="12" cy="8" r="5"/>
+              <path d="M10 8h4"/>
+              <path d="M12 6v4"/>
+            </svg>
+            Open Anchor Studio
+          </button>
+        </div>
+
+        <div className={styles.section}>
           <div className={styles.sectionTitle}>Location Preferences</div>
           <div className={styles.inputGroup}>
             <input
