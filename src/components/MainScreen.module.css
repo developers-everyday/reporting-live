@@ -63,6 +63,31 @@
   animation: micPulse 2s infinite;
 }
 
+.immersiveToggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.immersiveToggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.immersiveActive {
+  background: rgba(138, 43, 226, 0.25) !important;
+  border-color: rgba(138, 43, 226, 0.5) !important;
+  color: #c084fc !important;
+  box-shadow: 0 0 12px rgba(138, 43, 226, 0.3);
+}
+
 .mainContent {
   flex: 1;
   display: flex;

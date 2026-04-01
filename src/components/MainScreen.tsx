@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAgent } from 'agents/react';
 import styles from './MainScreen.module.css';
 import SettingsModal from './SettingsModal';
 import { useConversation } from '@elevenlabs/react';
@@ -36,9 +37,11 @@ export default function MainScreen({ userName }: { userName: string }) {
   const [actionResult, setActionResult] = useState<string | null>(null);
   const [customTopics, setCustomTopics] = useState<string[]>([]);
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [immersiveMode, setImmersiveMode] = useState(false);
 
   const currentIndexRef = useRef(currentIndex);
   const newsListRef = useRef(newsList);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const customTopicsRef = useRef(customTopics);
   const userInterestsRef = useRef(userInterests);
 
@@ -46,6 +49,104 @@ export default function MainScreen({ userName }: { userName: string }) {
   useEffect(() => { newsListRef.current = newsList; }, [newsList]);
   useEffect(() => { customTopicsRef.current = customTopics; }, [customTopics]);
   useEffect(() => { userInterestsRef.current = userInterests; }, [userInterests]);
+
+  // Load immersive mode preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('reportinglive_immersive_mode');
+      if (saved === 'true') setImmersiveMode(true);
+    } catch {}
+  }, []);
+
+  // Connect to SoundscapeAgent for ambient audio during immersive briefing
+  const soundscapeAgent = useAgent({
+    agent: "soundscape-agent",
+    name: "immersive-briefing",
+    host: process.env.NEXT_PUBLIC_AGENTS_URL || "http://localhost:8787",
+    query: { apiKey: process.env.NEXT_PUBLIC_AGENTS_API_KEY || "" },
+  });
+
+  // Generate and play ambient audio for the current article
+  const playAmbientForArticle = useCallback(async (headline: string, summary: string) => {
+    try {
+      // Fade out and stop any existing ambient audio
+      if (ambientAudioRef.current) {
+        const old = ambientAudioRef.current;
+        ambientAudioRef.current = null;
+        const fadeOut = setInterval(() => {
+          if (old.volume > 0.02) {
+            old.volume = Math.max(0, old.volume - 0.03);
+          } else {
+            clearInterval(fadeOut);
+            old.pause();
+          }
+        }, 60);
+      }
+
+      console.log("[Immersive] Generating ambient audio for:", headline);
+      const result = await soundscapeAgent.call("generateAmbientAudio", [headline, summary]) as {
+        ambientAudioBase64: string;
+        sceneDescription: string;
+        durationSeconds: number;
+        loop: boolean;
+      };
+
+      const audio = new Audio(`data:audio/mpeg;base64,${result.ambientAudioBase64}`);
+      audio.loop = true;
+      audio.volume = 0;
+      ambientAudioRef.current = audio;
+
+      // Fade in
+      await audio.play();
+      const fadeIn = setInterval(() => {
+        if (!ambientAudioRef.current || ambientAudioRef.current !== audio) {
+          clearInterval(fadeIn);
+          return;
+        }
+        if (audio.volume < 0.2) {
+          audio.volume = Math.min(0.2, audio.volume + 0.02);
+        } else {
+          clearInterval(fadeIn);
+        }
+      }, 100);
+
+      console.log("[Immersive] Ambient audio playing, scene:", result.sceneDescription);
+    } catch (err) {
+      // Non-fatal: briefing continues without ambient audio
+      console.warn("[Immersive] Ambient audio failed (non-fatal):", err);
+    }
+  }, [soundscapeAgent]);
+
+  // Stop ambient audio with fade-out
+  const stopAmbientAudio = useCallback(() => {
+    const audio = ambientAudioRef.current;
+    if (!audio) return;
+    const fadeOut = setInterval(() => {
+      if (audio.volume > 0.02) {
+        audio.volume = Math.max(0, audio.volume - 0.02);
+      } else {
+        clearInterval(fadeOut);
+        audio.pause();
+        ambientAudioRef.current = null;
+      }
+    }, 80);
+  }, []);
+
+  // Trigger ambient audio when article changes during an immersive briefing
+  useEffect(() => {
+    if (!isStarted || !immersiveMode) return;
+    const article = newsList[currentIndex];
+    if (article) {
+      playAmbientForArticle(article.headline, article.summary);
+    }
+  }, [currentIndex, isStarted, immersiveMode, newsList, playAmbientForArticle]);
+
+  // Cleanup ambient audio on unmount
+  useEffect(() => {
+    return () => {
+      ambientAudioRef.current?.pause();
+    };
+  }, []);
 
   // Fetch user's custom topics
   const fetchCustomTopics = useCallback(async () => {
@@ -364,6 +465,7 @@ export default function MainScreen({ userName }: { userName: string }) {
 
   const stopBriefing = async () => {
     await conversation.endSession();
+    stopAmbientAudio();
     setIsStarted(false);
     setMicMuted(true);
   };
@@ -417,6 +519,20 @@ export default function MainScreen({ userName }: { userName: string }) {
       <div className={styles.liveIndicator}>
          <div className={styles.livePulse}></div>
          {isRefreshing ? 'FETCHING FRESH NEWS...' : 'LIVE REPORTING'}
+         <button
+           className={`${styles.immersiveToggle} ${immersiveMode ? styles.immersiveActive : ''}`}
+           onClick={() => {
+             const next = !immersiveMode;
+             setImmersiveMode(next);
+             localStorage.setItem('reportinglive_immersive_mode', String(next));
+             if (!next) stopAmbientAudio();
+           }}
+           title={immersiveMode ? 'Immersive mode ON' : 'Immersive mode OFF'}
+         >
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+             <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+           </svg>
+         </button>
       </div>
 
       {/* Main Content Area */}
