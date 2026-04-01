@@ -39,18 +39,22 @@
 | **Custom Topics** | Add any topic in Settings for personalized news — from "AI" to "Formula 1". | Firecrawl `/v1/search` + Azure OpenAI |
 | **LLM-Refined Content** | Raw scraped data is rewritten into polished, broadcast-ready headlines and summaries. | Azure OpenAI (GPT-5.1) |
 | **Interactive Voice** | Interrupt the anchor anytime. Ask questions, navigate, or request deep dives — all by voice. | ElevenLabs |
+| **Immersive Soundscape** | Toggle immersive mode for ambient background audio that matches the story's setting during briefings. | ElevenLabs SFX + Cloudflare Workers AI |
+| **Anchor Studio** | Design a custom AI voice persona for your news anchor with personality traits and voice characteristics. | ElevenLabs Voice Design |
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
+- **Agents**: Cloudflare Workers (Durable Objects)
 - **Language**: TypeScript
 - **Auth**: Clerk
 - **Database**: Neon PostgreSQL + Prisma 7
 - **Web Scraping**: Firecrawl (search + scrape)
 - **Voice Agent**: ElevenLabs Conversational AI
-- **LLM**: Azure OpenAI (GPT-5.1)
+- **Voice Design & SFX**: ElevenLabs Voice Design, Text-to-Sound Effects
+- **LLM**: Azure OpenAI (GPT-5.1) + Cloudflare Workers AI (Llama 3.3)
 - **Styling**: CSS Modules (dark theme)
-- **Hosting**: Vercel
+- **Hosting**: Vercel (app) + Cloudflare Workers (agents)
 
 ## Architecture
 
@@ -63,6 +67,16 @@ User speaks → ElevenLabs Voice Agent → Client Tools
                            ↓               ↓               ↓
                      Firecrawl         Azure OpenAI      Neon DB
                    (search/scrape)    (refine/analyze)   (cache)
+
+Immersive Mode → SoundscapeAgent (Cloudflare Worker)
+                      ↓                    ↓
+               Workers AI (Llama)    ElevenLabs SFX
+              (scene analysis)      (ambient audio)
+
+Anchor Studio → AnchorAgent (Cloudflare Worker)
+                      ↓                    ↓
+               Workers AI (Llama)    ElevenLabs Voice Design
+              (voice description)   (voice creation)
 ```
 
 ## Quick Start
@@ -75,6 +89,7 @@ User speaks → ElevenLabs Voice Agent → Client Tools
 - A [Firecrawl](https://firecrawl.dev) API key
 - An [ElevenLabs](https://elevenlabs.io) account with a Conversational Agent
 - An [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) deployment (optional — falls back to raw data)
+- A [Cloudflare](https://cloudflare.com) account (for agents — Anchor Studio & Soundscape)
 
 ### 1. Clone & Install
 
@@ -126,10 +141,27 @@ npx prisma generate
    - `get_current_news`, `next_news`, `previous_news`, `deep_dive`, `other_sources`
 4. Add `userName` as a dynamic variable
 
-### 5. Run
+### 5. Agents Setup (Anchor Studio & Soundscape)
 
 ```bash
+cd agents
+npm install
+```
+
+Create `agents/.dev.vars`:
+```env
+ELEVENLABS_API_KEY=sk_...
+API_KEY=your-agents-api-key
+```
+
+### 6. Run
+
+```bash
+# Terminal 1 — Next.js app
 npm run dev
+
+# Terminal 2 — Cloudflare Workers agents
+npm run dev:agents
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and start your briefing.
@@ -147,32 +179,47 @@ This project showcases three core Firecrawl capabilities:
 
 ## Project Structure
 
+This is a monorepo with two services:
+
 ```
-src/
-├── app/
-│   ├── page.tsx                    # Landing page / main feed
-│   ├── onboarding/                 # User onboarding flow
-│   ├── api/
-│   │   ├── news/
-│   │   │   ├── feed/               # GET  — paginated news feed
-│   │   │   ├── deep-dive/          # POST — Firecrawl scrape + LLM deep dive
-│   │   │   ├── multi-source/       # POST — Firecrawl search+scrape + LLM comparison
-│   │   │   └── topic-search/       # POST — Firecrawl search for custom topics
-│   │   ├── scrape/trigger/         # POST — manual scrape trigger
-│   │   └── cron/scrape/            # GET  — scheduled scrape endpoint
-├── components/
-│   ├── LandingPage.tsx             # Public landing page (beta)
-│   ├── MainScreen.tsx              # Main news feed + voice agent
-│   ├── Onboarding.tsx              # Interest/language/location setup
-│   └── SettingsModal.tsx           # User preferences + custom topics
-├── lib/
-│   ├── firecrawl.ts                # Firecrawl client (search, scrape, searchAndScrape)
-│   ├── llm.ts                      # Azure OpenAI (refine, deep dive, multi-source)
-│   ├── scraper.ts                  # News scrape pipeline
-│   ├── image-gen.ts                # Article image generation (placeholder — AI generation coming soon)
-│   ├── prisma.ts                   # Database client
-│   └── constants.ts                # Categories & search queries
-└── proxy.ts                        # Clerk auth middleware
+reporting-live/
+├── src/                             # Next.js frontend app
+│   ├── app/
+│   │   ├── page.tsx                 # Landing page / main feed
+│   │   ├── anchor-studio/           # Custom voice creation
+│   │   ├── immersive/               # Immersive soundscape player
+│   │   ├── onboarding/              # User onboarding flow
+│   │   └── api/
+│   │       ├── news/
+│   │       │   ├── feed/            # GET  — paginated news feed
+│   │       │   ├── deep-dive/       # POST — Firecrawl scrape + LLM deep dive
+│   │       │   ├── multi-source/    # POST — Firecrawl search+scrape + LLM comparison
+│   │       │   └── topic-search/    # POST — Firecrawl search for custom topics
+│   │       ├── scrape/trigger/      # POST — manual scrape trigger
+│   │       └── cron/scrape/         # GET  — scheduled scrape endpoint
+│   ├── components/
+│   │   ├── MainScreen.tsx           # Main news feed + voice agent + immersive mode
+│   │   ├── AnchorStudio.tsx         # Custom voice creation wizard
+│   │   ├── ImmersivePlayer.tsx      # Soundscape generation + playback
+│   │   ├── SettingsModal.tsx        # User preferences + custom topics
+│   │   └── LandingPage.tsx          # Public landing page (beta)
+│   └── lib/
+│       ├── firecrawl.ts             # Firecrawl client
+│       ├── llm.ts                   # Azure OpenAI
+│       ├── scraper.ts               # News scrape pipeline
+│       └── prisma.ts                # Database client
+├── agents/                          # Cloudflare Workers agents
+│   ├── src/
+│   │   ├── worker.ts                # HTTP routing + auth
+│   │   ├── types.ts                 # Env, ElevenLabs client, base64 utils
+│   │   └── agents/
+│   │       ├── SoundscapeAgent.ts   # Ambient audio + narration generation
+│   │       └── AnchorAgent.ts       # Voice design + creation
+│   ├── wrangler.jsonc               # Cloudflare Workers config
+│   └── package.json
+├── prisma/                          # Database schema
+├── public/                          # Static assets
+└── elevenlabs-tools/                # ElevenLabs agent tool definitions
 ```
 
 ## Roadmap
@@ -240,6 +287,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <p align="center">
-  Built with Firecrawl, ElevenLabs, and Azure OpenAI<br/>
+  Built with Firecrawl, ElevenLabs, Cloudflare Workers AI, and Azure OpenAI<br/>
   <sub>Made for the Firecrawl Hackathon 2026</sub>
 </p>

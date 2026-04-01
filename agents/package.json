@@ -1,0 +1,22 @@
+{
+  "name": "reporting-live-agents",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/worker.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "agents": "*",
+    "workers-ai-provider": "^3.1.8",
+    "ai": "^6.0.141",
+    "@elevenlabs/elevenlabs-js": "^2.40.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.78.0"
+  }
+}

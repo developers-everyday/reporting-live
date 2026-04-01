@@ -1,11 +1,13 @@
 {
-  "name": "reporting-live-app",
+  "name": "reporting-live",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:agents": "cd agents && npm run dev",
     "build": "prisma generate && prisma db push && next build",
     "start": "next start",
+    "deploy:agents": "cd agents && npm run deploy",
     "lint": "eslint"
   },
   "dependencies": {
