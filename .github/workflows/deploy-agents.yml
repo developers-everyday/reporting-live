@@ -1,15 +1,11 @@
-  name: Deploy Cloudflare Workers Agents
+  name: Deploy Cloudflare Workers Agents                                                                                                                                                                                             
 
   on:
-    push:
-      branches:
+    push:                                                                                                                                                                                                                            
+      branches:                                                                                                                                                                                                                      
         - main
-      paths:
-        - 'agents/**'
-
-  defaults:
-    run:
-      working-directory: agents
+      paths:                                                                                                                                                                                                                         
+        - 'agents/**'                                                                                                                                                                                                              
 
   jobs:
     deploy:
@@ -19,18 +15,18 @@
       steps:
         - uses: actions/checkout@v4
 
-        - name: Setup Node
+        - name: Setup Node                                                                                                                                                                                                           
           uses: actions/setup-node@v4
-          with:
-            node-version: "20"
+          with:                                                                                                                                                                                                                      
+            node-version: "20"                                                                                                                                                                                                     
 
         - name: Install Dependencies
+          working-directory: agents
           run: npm ci
 
         - name: Deploy to Cloudflare
           uses: cloudflare/wrangler-action@v3
-          with:
+          with:                                                                                                                                                                                                                      
             apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-            accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-            command: deploy
-            workingDirectory: agents
+            accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}                                                                                                                                                                          
+            workingDirectory: agents                                     
