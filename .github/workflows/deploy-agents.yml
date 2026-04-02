@@ -11,7 +11,7 @@
     deploy:
       runs-on: ubuntu-latest
       name: Deploy Agents
-      environment: production
+      environment: Production
       steps:
         - uses: actions/checkout@v4
                                                                                                                                                                                                                                      
